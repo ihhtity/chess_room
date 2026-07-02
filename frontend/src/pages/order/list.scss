@@ -1,0 +1,134 @@
+.tabs {
+  display: flex;
+  background: #fff;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 16rpx 0;
+    font-size: 30rpx;
+    color: #666;
+    position: relative;
+    transition: color 0.3s;
+
+    &.active {
+      color: #667eea;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40rpx;
+        height: 6rpx;
+        background: #667eea;
+        border-radius: 3rpx;
+      }
+    }
+  }
+}
+
+.order-list {
+  padding: 20rpx;
+}
+
+.order-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20rpx;
+
+    .order-no {
+      font-size: 26rpx;
+      color: #999;
+    }
+
+    .order-status {
+      font-size: 28rpx;
+      font-weight: 500;
+    }
+  }
+
+  .order-room {
+    margin-bottom: 16rpx;
+
+    .room-name {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #333;
+      display: block;
+    }
+
+    .room-type {
+      font-size: 26rpx;
+      color: #999;
+    }
+  }
+
+  .order-time {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20rpx;
+    font-size: 28rpx;
+    color: #666;
+
+    .time-icon {
+      margin-right: 12rpx;
+    }
+  }
+
+  .order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .order-price {
+      font-size: 32rpx;
+      font-weight: 600;
+      color: #ff4d4f;
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 20rpx;
+
+      .action-btn {
+        padding: 12rpx 32rpx;
+        border-radius: 24rpx;
+        font-size: 28rpx;
+
+        &.cancel {
+          background: #f5f5f5;
+          color: #666;
+        }
+
+        &.pay {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+        }
+      }
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 100rpx 0;
+
+  .empty-text {
+    font-size: 30rpx;
+    color: #999;
+  }
+}
