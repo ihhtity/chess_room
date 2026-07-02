@@ -75,9 +75,9 @@ export default function RechargePackageManage() {
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusText(s) },
     { title: '操作', key: 'action', render: (_: any, record: RechargePackage) => (
-      <div>
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
       </div>
     )}
   ]

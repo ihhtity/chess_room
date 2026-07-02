@@ -10,22 +10,33 @@ import (
 )
 
 type RoomCreateRequest struct {
-	Name     string `json:"name"`
-	TypeID   int64  `json:"type_id"`
+	Name     string `json:"name" binding:"required"`
+	TypeID   int64  `json:"type_id" binding:"required"`
 	Floor    string `json:"floor"`
-	Capacity int    `json:"capacity"`
+	Capacity int    `json:"capacity" binding:"required"`
 	Images   string `json:"images"`
 }
 
 type RoomUpdateRequest struct {
 	Name     string `json:"name"`
-	TypeID   int64  `json:"type_id"`
+	TypeID   *int64 `json:"type_id"`
 	Floor    string `json:"floor"`
-	Capacity int    `json:"capacity"`
+	Capacity *int   `json:"capacity"`
 	Images   string `json:"images"`
 	Status   *int   `json:"status"`
 }
 
+// @Summary 获取房间列表
+// @Description 获取房间列表，支持按类型、楼层、状态筛选
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param type_id query string false "房间类型ID"
+// @Param floor query string false "楼层"
+// @Param status query string false "房间状态"
+// @Success 200 {object} response.Response{data=[]model.Room}
+// @Failure 400 {object} response.Response
+// @Router /rooms [get]
 func GetRoomList(c *gin.Context) {
 	typeID := c.Query("type_id")
 	floor := c.Query("floor")
@@ -52,6 +63,16 @@ func GetRoomList(c *gin.Context) {
 	response.Success(c, rooms)
 }
 
+// @Summary 获取房间详情
+// @Description 根据房间ID获取房间详情
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param id path string true "房间ID"
+// @Success 200 {object} response.Response{data=model.Room}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /rooms/{id} [get]
 func GetRoomDetail(c *gin.Context) {
 	id := c.Param("id")
 	room, err := logic.GetRoomByID(id)
@@ -62,6 +83,17 @@ func GetRoomDetail(c *gin.Context) {
 	response.Success(c, room)
 }
 
+// @Summary 创建房间
+// @Description 管理员创建新房间
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param body body RoomCreateRequest true "房间信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.Room}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /room [post]
 func CreateRoom(c *gin.Context) {
 	var req RoomCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,6 +118,19 @@ func CreateRoom(c *gin.Context) {
 	response.SuccessWithMsg(c, "创建成功", room)
 }
 
+// @Summary 更新房间
+// @Description 管理员更新房间信息
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param id path string true "房间ID"
+// @Param body body RoomUpdateRequest true "房间更新信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.Room}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /rooms/{id} [put]
 func UpdateRoom(c *gin.Context) {
 	id := c.Param("id")
 	var req RoomUpdateRequest
@@ -103,14 +148,14 @@ func UpdateRoom(c *gin.Context) {
 	if req.Name != "" {
 		room.Name = req.Name
 	}
-	if req.TypeID != 0 {
-		room.TypeID = req.TypeID
+	if req.TypeID != nil {
+		room.TypeID = *req.TypeID
 	}
 	if req.Floor != "" {
 		room.Floor = req.Floor
 	}
-	if req.Capacity != 0 {
-		room.Capacity = req.Capacity
+	if req.Capacity != nil {
+		room.Capacity = *req.Capacity
 	}
 	if req.Images != "" {
 		room.Images = req.Images
@@ -127,6 +172,18 @@ func UpdateRoom(c *gin.Context) {
 	response.SuccessWithMsg(c, "更新成功", room)
 }
 
+// @Summary 删除房间
+// @Description 管理员删除房间
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param id path string true "房间ID"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /rooms/{id} [delete]
 func DeleteRoom(c *gin.Context) {
 	id := c.Param("id")
 	if err := logic.DeleteRoom(id); err != nil {
@@ -136,6 +193,14 @@ func DeleteRoom(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// @Summary 获取房间类型列表
+// @Description 获取房间类型列表
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Response{data=[]model.RoomType}
+// @Failure 400 {object} response.Response
+// @Router /room-types [get]
 func GetRoomTypeList(c *gin.Context) {
 	types, err := logic.GetRoomTypeList()
 	if err != nil {
@@ -145,6 +210,16 @@ func GetRoomTypeList(c *gin.Context) {
 	response.Success(c, types)
 }
 
+// @Summary 获取房间类型详情
+// @Description 根据房间类型ID获取房间类型详情
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param id path string true "房间类型ID"
+// @Success 200 {object} response.Response{data=model.RoomType}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /room-types/{id} [get]
 func GetRoomTypeDetail(c *gin.Context) {
 	id := c.Param("id")
 	roomType, err := logic.GetRoomTypeByID(id)
@@ -155,6 +230,17 @@ func GetRoomTypeDetail(c *gin.Context) {
 	response.Success(c, roomType)
 }
 
+// @Summary 创建房间类型
+// @Description 管理员创建房间类型
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param body body object true "房间类型信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.RoomType}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /room-types [post]
 func CreateRoomType(c *gin.Context) {
 	var req struct {
 		Name        string  `json:"name"`
@@ -182,6 +268,19 @@ func CreateRoomType(c *gin.Context) {
 	response.SuccessWithMsg(c, "创建成功", roomType)
 }
 
+// @Summary 更新房间类型
+// @Description 管理员更新房间类型信息
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param id path string true "房间类型ID"
+// @Param body body object true "房间类型更新信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.RoomType}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /room-types/{id} [put]
 func UpdateRoomType(c *gin.Context) {
 	id := c.Param("id")
 	var req struct {
@@ -222,6 +321,18 @@ func UpdateRoomType(c *gin.Context) {
 	response.SuccessWithMsg(c, "更新成功", roomType)
 }
 
+// @Summary 删除房间类型
+// @Description 管理员删除房间类型
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param id path string true "房间类型ID"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /room-types/{id} [delete]
 func DeleteRoomType(c *gin.Context) {
 	id := c.Param("id")
 	if err := logic.DeleteRoomType(id); err != nil {
@@ -231,6 +342,13 @@ func DeleteRoomType(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// @Summary 健康检查
+// @Description 服务健康检查接口
+// @Tags 系统
+// @Accept json
+// @Produce json
+// @Success 200 {object} object{status=string}
+// @Router /health [get]
 func HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",

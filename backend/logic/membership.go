@@ -122,7 +122,7 @@ func GetMembershipByID(id int64) (*model.Membership, error) {
 	return membership, nil
 }
 
-func UpdateMembership(id int64, level *int, balance *float64, points *int, membershipStatus *int) (*model.Membership, error) {
+func UpdateMembership(id int64, level *int, balance *float64, points *int, membershipStatus *int, expiredAt *time.Time) (*model.Membership, error) {
 	membership, err := mysql.GetMembershipByID(id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -143,6 +143,9 @@ func UpdateMembership(id int64, level *int, balance *float64, points *int, membe
 	if membershipStatus != nil {
 		membership.MembershipStatus = *membershipStatus
 	}
+	if expiredAt != nil {
+		membership.ExpiredAt = expiredAt
+	}
 
 	if err := mysql.UpdateMembership(membership); err != nil {
 		return nil, errno.New(errno.InternalError)
@@ -158,8 +161,23 @@ func DeleteMembership(id int64) error {
 	return nil
 }
 
+func CreateMembership(membership *model.Membership) error {
+	_, err := mysql.GetMembershipByUserID(membership.UserID)
+	if err == nil {
+		return errno.NewWithMessage(errno.BadRequest, "该用户已存在会员信息")
+	}
+	if err != gorm.ErrRecordNotFound {
+		return errno.New(errno.InternalError)
+	}
+
+	if err := mysql.CreateMembership(membership); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
 func GetRechargeRecords(userID int64) ([]model.RechargeRecord, error) {
-	records, err := mysql.GetRechargeRecords(userID)
+	records, err := mysql.GetRechargeRecordList(userID, -1)
 	if err != nil {
 		return nil, errno.New(errno.InternalError)
 	}

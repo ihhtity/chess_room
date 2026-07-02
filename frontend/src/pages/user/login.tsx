@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Input, Cell, CellGroup } from '@nutui/nutui-react'
 import { showToast } from '@/components/Toast'
 import { userApi } from '@/api'
+import './login.scss'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -37,6 +38,7 @@ export default function LoginPage() {
       }, 1000)
     } catch (error) {
       console.error('Login failed:', error)
+      showToast({ message: '登录失败，请检查账号密码', type: 'error' })
     } finally {
       setIsLoading(false)
     }
@@ -44,40 +46,44 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      <div className="login-bg"></div>
+      
       <div className="login-container">
         <div className="login-header">
+          <div className="logo-wrapper">
+            <span className="logo-icon">🀄</span>
+          </div>
           <span className="login-title">棋牌室预订系统</span>
-          <span className="login-subtitle">欢迎回来</span>
+          <span className="login-subtitle">尊享棋牌时光</span>
         </div>
 
-        <CellGroup>
-          <Cell>
+        <CellGroup className="login-form">
+          <Cell className="form-cell">
             <Input
               type="tel"
               placeholder="请输入手机号"
               value={phone}
               onChange={(value) => setPhone(value)}
               maxLength={11}
-              prefix="📱"
             />
           </Cell>
-          <Cell>
+          <Cell className="form-cell">
             <Input
               type="password"
               placeholder="请输入密码"
               value={password}
               onChange={(value) => setPassword(value)}
-              prefix="🔑"
             />
           </Cell>
         </CellGroup>
 
-        <Button type="primary" block loading={isLoading} onClick={handleLogin}>
+        <Button type="primary" block className="login-btn" loading={isLoading} onClick={handleLogin}>
           {isLoading ? '登录中...' : '登录'}
         </Button>
 
         <div className="login-footer">
           <span className="forgot-password">忘记密码？</span>
+          <span className="register-link">注册账号</span>
         </div>
       </div>
     </div>

@@ -1,110 +1,117 @@
-.loading {
+.container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding-bottom: 120px;
+}
+
+.loading-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-size: 32rpx;
-  color: #999;
 }
 
-.card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
+.room-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 16px;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
 
-  .card-header {
-    margin-bottom: 20rpx;
-
-    .card-title {
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #333;
-    }
-  }
-
-  .date-picker {
+  .room-info-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20rpx;
-    background: #f5f5f5;
-    border-radius: 12rpx;
+    margin-bottom: 16px;
 
-    .date-value {
-      font-size: 30rpx;
-      color: #333;
+    .room-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
     }
 
-    .date-icon {
-      font-size: 24rpx;
-      color: #999;
+    .room-type {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      padding: 4px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
     }
   }
 
-  .time-slots {
+  .room-price-hint {
     display: flex;
-    flex-wrap: wrap;
-    gap: 16rpx;
+    align-items: center;
 
-    .time-slot {
-      padding: 16rpx 24rpx;
-      background: #f5f5f5;
-      border-radius: 12rpx;
-      font-size: 28rpx;
-      color: #666;
-      border: 2rpx solid transparent;
-      transition: all 0.3s;
+    .price-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-right: 8px;
+    }
 
-      &.active {
-        background: rgba(102, 126, 234, 0.1);
-        color: #667eea;
-        border-color: #667eea;
-      }
+    .price-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
     }
   }
+}
 
-  .remark-input {
+.form-group {
+  margin: 0 16px 16px;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+
+  :deep(.nut-textarea) {
     width: 100%;
-    padding: 20rpx;
-    background: #f5f5f5;
-    border-radius: 12rpx;
-    font-size: 28rpx;
+    padding: 0;
+    font-size: 14px;
     color: #333;
   }
+}
+
+.summary-group {
+  margin: 0 16px 16px;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
 
   .booking-summary {
     .summary-item {
       display: flex;
       justify-content: space-between;
-      padding: 16rpx 0;
-      border-bottom: 1rpx solid #f0f0f0;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px dashed #f5f5f5;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.total {
+        .summary-label {
+          font-size: 16px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .summary-value.price {
+          font-size: 24px;
+          font-weight: 700;
+          color: #ff4d4f;
+        }
+      }
 
       .summary-label {
-        font-size: 28rpx;
+        font-size: 14px;
         color: #999;
       }
 
       .summary-value {
-        font-size: 28rpx;
+        font-size: 14px;
         color: #333;
-
-        &.price {
-          color: #ff4d4f;
-          font-weight: 600;
-          font-size: 32rpx;
-        }
-      }
-
-      &.total {
-        border-bottom: none;
-        padding-top: 24rpx;
-
-        .summary-label {
-          font-size: 30rpx;
-          font-weight: 500;
-          color: #333;
-        }
+        font-weight: 500;
       }
     }
   }
@@ -118,31 +125,34 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding: 16px 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   background: #fff;
-  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 
   .price-info {
+    display: flex;
+    flex-direction: column;
+
     .price-label {
-      font-size: 26rpx;
+      font-size: 12px;
       color: #999;
-      display: block;
     }
 
     .total-price {
-      font-size: 44rpx;
+      font-size: 28px;
       font-weight: 700;
       color: #ff4d4f;
     }
   }
 
-  .submit-btn {
-    padding: 24rpx 60rpx;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    font-size: 32rpx;
+  :deep(.nut-button) {
+    flex: 1;
+    margin-left: 16px;
+    border-radius: 24px;
+    height: 48px;
+    font-size: 16px;
     font-weight: 500;
-    border-radius: 44rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
 }

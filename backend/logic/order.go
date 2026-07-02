@@ -154,3 +154,35 @@ func DeleteOrder(orderID int64) error {
 	}
 	return nil
 }
+
+func UpdateOrder(orderID int64, startTime, endTime *time.Time, duration int, status int, remark string) (*model.Order, error) {
+	order, err := mysql.GetOrderByID(orderID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errno.New(errno.OrderNotFound)
+		}
+		return nil, errno.New(errno.InternalError)
+	}
+
+	if startTime != nil {
+		order.StartTime = *startTime
+	}
+	if endTime != nil {
+		order.EndTime = *endTime
+	}
+	if duration > 0 {
+		order.Duration = duration
+	}
+	if status >= 0 {
+		order.Status = status
+	}
+	if remark != "" {
+		order.Remark = remark
+	}
+
+	if err := mysql.UpdateOrder(order); err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+
+	return order, nil
+}

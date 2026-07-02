@@ -1,28 +1,57 @@
-// 声明 main 包，程序入口包
+// @title 棋室管理系统 API
+// @version 1.0
+// @description 棋室管理系统后端 API 文档
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /api
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
+// 定义 main 包
 package main
 
-// 导入项目所需的依赖包
+// 导入所需依赖包
 import (
-	// 导入 MySQL 数据库操作包
+	// MySQL 数据库操作包
 	"chess-room-backend/dao/mysql"
-	// 导入 Redis 缓存操作包
+	// Redis 缓存操作包
 	"chess-room-backend/dao/redis"
-	// 导入数据模型包
+	// 引入 Swagger 文档（下划线表示仅执行 init 函数）
+	_ "chess-room-backend/docs"
+	// 数据模型包
 	"chess-room-backend/model"
-	// 导入配置管理包
+	// 配置管理包
 	"chess-room-backend/pkg/config"
-	// 导入日志管理包
+	// 日志管理包
 	"chess-room-backend/pkg/log"
-	// 导入路由配置包
+	// 路由配置包
 	"chess-room-backend/router"
-	// 导入格式化 I/O 包
+	// 上下文包，用于超时控制
+	"context"
+	// 格式化包
 	"fmt"
-	// 导入 HTTP 网络服务包
+	// HTTP 服务包
 	"net/http"
-	// 导入时间处理包
+	// 操作系统功能包
+	"os"
+	// 信号处理包
+	"os/signal"
+	// 系统调用包
+	"syscall"
+	// 时间处理包
 	"time"
 
-	// 导入 Viper 配置管理库
+	// Viper 配置管理库
 	"github.com/spf13/viper"
 )
 
@@ -50,7 +79,7 @@ func initDatabase() {
 			log.Logger.Fatal("数据库自动迁移失败:", err)
 		}
 		// 初始化默认数据
-		model.InitDefaultData(mysql.DB)
+		// model.InitDefaultData(mysql.DB)
 		// 记录初始化成功日志
 		log.Logger.Info("数据库初始化成功")
 	} else {
@@ -66,11 +95,10 @@ func initDatabase() {
 	}
 }
 
-// 程序入口：加载配置、初始化组件、启动服务
+// 主函数：程序入口
 func main() {
 	// 初始化配置文件
 	config.Init("./config/config.yaml")
-
 	// 初始化日志系统
 	log.Init()
 
@@ -84,31 +112,58 @@ func main() {
 	// 延迟关闭 Redis 连接
 	defer redis.Close()
 
-	// 调用数据库初始化函数
+	// 初始化数据库表结构
 	initDatabase()
 
 	// 设置 HTTP 路由
 	r := router.SetupRouter()
 
-	// 创建 HTTP 服务器配置
+	// 创建 HTTP 服务器实例
 	server := &http.Server{
-		// 设置服务器监听地址和端口
+		// 服务器监听地址
 		Addr: ":" + viper.GetString("server.port"),
-		// 设置请求处理器
+		// 请求处理器
 		Handler: r,
-		// 设置读取超时时间为 10 秒
+		// 读取超时时间
 		ReadTimeout: 10 * time.Second,
-		// 设置写入超时时间为 10 秒
+		// 写入超时时间
 		WriteTimeout: 10 * time.Second,
-		// 设置请求头最大字节数为 1MB
+		// 最大请求头大小（1MB）
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	// 启动 HTTP 服务
-	log.Logger.Info("服务正在启动，端口：" + viper.GetString("server.port"))
-	// 启动服务器并监听请求
-	if err := server.ListenAndServe(); err != nil {
-		// 启动失败则记录致命错误并退出
-		log.Logger.Fatal("服务启动失败:", err)
+	// 启动 HTTP 服务（协程中运行）
+	go func() {
+		// 记录服务启动日志
+		log.Logger.Info("服务正在启动，端口：" + viper.GetString("server.port"))
+		// 启动服务并监听端口
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			// 服务启动失败则记录致命错误
+			log.Logger.Fatal("服务启动失败:", err)
+		}
+	}()
+
+	// 创建信号通道，缓冲大小为 1
+	quit := make(chan os.Signal, 1)
+	// 注册信号监听：中断信号和终止信号
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	// 阻塞等待信号
+	<-quit
+
+	// 记录服务关闭日志
+	log.Logger.Info("服务正在关闭...")
+
+	// 创建 5 秒超时的上下文
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// 延迟取消上下文
+	defer cancel()
+
+	// 优雅关闭服务
+	if err := server.Shutdown(ctx); err != nil {
+		// 关闭失败则记录致命错误
+		log.Logger.Fatal("服务关闭失败:", err)
 	}
+
+	// 记录服务关闭成功日志
+	log.Logger.Info("服务已优雅关闭")
 }

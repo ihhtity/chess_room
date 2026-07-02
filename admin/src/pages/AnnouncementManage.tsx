@@ -79,9 +79,9 @@ export default function AnnouncementManage() {
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusText(s) },
     { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
     { title: '操作', key: 'action', render: (_: any, record: Announcement) => (
-      <div>
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
       </div>
     )}
   ]

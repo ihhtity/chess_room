@@ -10,7 +10,14 @@ import {
   LogoutOutlined,
   CalendarOutlined,
   BellOutlined,
-  CreditCardOutlined
+  CreditCardOutlined,
+  SettingOutlined,
+  ClockCircleOutlined,
+  MessageOutlined,
+  WalletOutlined,
+  FileTextOutlined,
+  NotificationOutlined,
+  AuditOutlined
 } from '@ant-design/icons'
 import './Layout.scss'
 
@@ -24,7 +31,15 @@ const menuItems = [
   { key: '/member', icon: <UserOutlined />, label: '会员管理' },
   { key: '/activity', icon: <CalendarOutlined />, label: '活动管理' },
   { key: '/announcement', icon: <BellOutlined />, label: '公告管理' },
-  { key: '/recharge-package', icon: <CreditCardOutlined />, label: '充值套餐' }
+  { key: '/recharge-package', icon: <CreditCardOutlined />, label: '充值套餐' },
+  { key: '/time-slot', icon: <ClockCircleOutlined />, label: '时间槽管理' },
+  { key: '/review', icon: <MessageOutlined />, label: '评价管理' },
+  { key: '/holiday', icon: <CalendarOutlined />, label: '节假日管理' },
+  { key: '/payment', icon: <WalletOutlined />, label: '支付管理' },
+  { key: '/recharge-record', icon: <FileTextOutlined />, label: '充值记录' },
+  { key: '/notification', icon: <NotificationOutlined />, label: '通知管理' },
+  { key: '/operation-log', icon: <AuditOutlined />, label: '操作日志' },
+  { key: '/profile', icon: <SettingOutlined />, label: '个人资料' }
 ]
 
 export default function Layout() {

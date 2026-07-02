@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message, Tag } from 'antd'
+import type { Dayjs } from 'dayjs'
+import dayjs from 'dayjs'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { activityApi } from '@/api'
 import { Activity } from '@/types'
@@ -33,9 +35,10 @@ export default function ActivityManage() {
     setEditingId(record.id)
     form.setFieldsValue({
       ...record,
-      valid_from: record.valid_from ? new Date(record.valid_from) : null,
-      valid_to: record.valid_to ? new Date(record.valid_to) : null,
-      discount: record.discount * 100
+      valid_from: record.valid_from ? dayjs(record.valid_from) : null,
+      valid_to: record.valid_to ? dayjs(record.valid_to) : null,
+      discount: record.discount * 100,
+      sort_order: record.sort_order
     })
     setOpen(true)
   }
@@ -55,8 +58,8 @@ export default function ActivityManage() {
       const data = {
         ...values,
         discount: (values.discount || 0) / 100,
-        valid_from: values.valid_from ? values.valid_from.toISOString() : null,
-        valid_to: values.valid_to ? values.valid_to.toISOString() : null
+        valid_from: values.valid_from ? (values.valid_from as Dayjs).format('YYYY-MM-DD HH:mm:ss') : null,
+        valid_to: values.valid_to ? (values.valid_to as Dayjs).format('YYYY-MM-DD HH:mm:ss') : null
       }
       if (editingId) {
         await activityApi.update(editingId, data)
@@ -77,18 +80,23 @@ export default function ActivityManage() {
     return map[status] || '未知'
   }
 
+  const getStatusTag = (status: number) => {
+    const colors: Record<number, string> = { 0: 'red', 1: 'green' }
+    return <Tag color={colors[status]}>{getStatusText(status)}</Tag>
+  }
+
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '活动名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '折扣', dataIndex: 'discount', key: 'discount', render: (v: number) => `${(v * 100).toFixed(0)}%` },
+    { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
+    { title: '折扣', dataIndex: 'discount', key: 'discount', render: (v: number) => <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{(v * 100).toFixed(0)}%</span> },
     { title: '开始时间', dataIndex: 'valid_from', key: 'valid_from' },
     { title: '结束时间', dataIndex: 'valid_to', key: 'valid_to' },
-    { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusText(s) },
+    { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusTag(s) },
     { title: '操作', key: 'action', render: (_: any, record: Activity) => (
-      <div>
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
       </div>
     )}
   ]
@@ -107,24 +115,27 @@ export default function ActivityManage() {
         onCancel={() => setOpen(false)}
         footer={null}
       >
-        <Form form={form} onFinish={handleSubmit}>
-          <Form.Item name="name" rules={[{ required: true, message: '请输入活动名称' }]}>
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form.Item name="name" label="活动名称" rules={[{ required: true, message: '请输入活动名称' }]}>
             <Input placeholder="活动名称" />
           </Form.Item>
-          <Form.Item name="description">
-            <Input.TextArea placeholder="活动描述" />
+          <Form.Item name="description" label="活动描述">
+            <Input.TextArea placeholder="活动描述" rows={3} />
           </Form.Item>
-          <Form.Item name="image">
+          <Form.Item name="image" label="活动图片URL">
             <Input placeholder="活动图片URL" />
           </Form.Item>
-          <Form.Item name="discount" rules={[{ required: true, message: '请输入折扣率' }]}>
-            <InputNumber placeholder="折扣率(%)" min={0} max={100} />
+          <Form.Item name="discount" label="折扣率(%)" rules={[{ required: true, message: '请输入折扣率' }]}>
+            <InputNumber placeholder="折扣率(%)" min={0} max={100} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="valid_from" label="开始时间">
-            <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
+            <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="valid_to" label="结束时间">
-            <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
+            <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="sort_order" label="排序">
+            <InputNumber placeholder="排序" min={0} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="status" label="状态">
             <Select placeholder="状态">

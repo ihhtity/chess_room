@@ -10,7 +10,7 @@ import (
 )
 
 type ActivityCreateRequest struct {
-	Name        string  `json:"name"`
+	Name        string  `json:"name" binding:"required"`
 	Description string  `json:"description"`
 	Image       string  `json:"image"`
 	Discount    float64 `json:"discount"`
@@ -30,6 +30,15 @@ type ActivityUpdateRequest struct {
 	SortOrder   *int     `json:"sort_order"`
 }
 
+// @Summary 获取活动列表
+// @Description 获取活动列表，管理员查看全部，普通用户只看启用的活动
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=[]model.Activity}
+// @Failure 400 {object} response.Response
+// @Router /activities [get]
 func GetActivityList(c *gin.Context) {
 	adminID := c.GetInt64("admin_id")
 	var activities []model.Activity
@@ -46,6 +55,16 @@ func GetActivityList(c *gin.Context) {
 	response.Success(c, activities)
 }
 
+// @Summary 获取活动详情
+// @Description 根据活动ID获取活动详情
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param id path string true "活动ID"
+// @Success 200 {object} response.Response{data=model.Activity}
+// @Failure 400 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /activities/{id} [get]
 func GetActivityDetail(c *gin.Context) {
 	id := c.Param("id")
 	activity, err := logic.GetActivityByID(id)
@@ -56,6 +75,17 @@ func GetActivityDetail(c *gin.Context) {
 	response.Success(c, activity)
 }
 
+// @Summary 创建活动
+// @Description 管理员创建新活动
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param body body ActivityCreateRequest true "活动信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.Activity}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /activities [post]
 func CreateActivity(c *gin.Context) {
 	var req ActivityCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,14 +102,20 @@ func CreateActivity(c *gin.Context) {
 	}
 
 	if req.ValidFrom != "" {
-		if validFrom, err := time.Parse(time.RFC3339, req.ValidFrom); err == nil {
+		if validFrom, err := time.Parse("2006-01-02 15:04:05", req.ValidFrom); err == nil {
 			activity.ValidFrom = validFrom
+		} else {
+			response.Fail(c, 400, "开始时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+			return
 		}
 	}
 
 	if req.ValidTo != "" {
-		if validTo, err := time.Parse(time.RFC3339, req.ValidTo); err == nil {
+		if validTo, err := time.Parse("2006-01-02 15:04:05", req.ValidTo); err == nil {
 			activity.ValidTo = validTo
+		} else {
+			response.Fail(c, 400, "结束时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+			return
 		}
 	}
 
@@ -91,6 +127,19 @@ func CreateActivity(c *gin.Context) {
 	response.SuccessWithMsg(c, "创建成功", activity)
 }
 
+// @Summary 更新活动
+// @Description 管理员更新活动信息
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param id path string true "活动ID"
+// @Param body body ActivityUpdateRequest true "活动更新信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=model.Activity}
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /activities/{id} [put]
 func UpdateActivity(c *gin.Context) {
 	id := c.Param("id")
 	var req ActivityUpdateRequest
@@ -118,13 +167,19 @@ func UpdateActivity(c *gin.Context) {
 		activity.Discount = *req.Discount
 	}
 	if req.ValidFrom != "" {
-		if validFrom, err := time.Parse(time.RFC3339, req.ValidFrom); err == nil {
+		if validFrom, err := time.Parse("2006-01-02 15:04:05", req.ValidFrom); err == nil {
 			activity.ValidFrom = validFrom
+		} else {
+			response.Fail(c, 400, "开始时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+			return
 		}
 	}
 	if req.ValidTo != "" {
-		if validTo, err := time.Parse(time.RFC3339, req.ValidTo); err == nil {
+		if validTo, err := time.Parse("2006-01-02 15:04:05", req.ValidTo); err == nil {
 			activity.ValidTo = validTo
+		} else {
+			response.Fail(c, 400, "结束时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+			return
 		}
 	}
 	if req.Status != nil {
@@ -142,6 +197,18 @@ func UpdateActivity(c *gin.Context) {
 	response.SuccessWithMsg(c, "更新成功", activity)
 }
 
+// @Summary 删除活动
+// @Description 管理员删除活动
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param id path string true "活动ID"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 404 {object} response.Response
+// @Router /activities/{id} [delete]
 func DeleteActivity(c *gin.Context) {
 	id := c.Param("id")
 	if err := logic.DeleteActivity(id); err != nil {

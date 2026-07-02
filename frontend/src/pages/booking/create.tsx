@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Cell, CellGroup, Loading, TextArea, Calendar, Picker } from '@nutui/nutui-react'
 import { showToast } from '@/components/Toast'
 import { roomApi, orderApi, Room } from '@/api'
+import './create.scss'
 
 export default function CreateBooking() {
   const { room_id } = useParams<{ room_id: string }>()
@@ -98,39 +99,58 @@ export default function CreateBooking() {
 
   if (!room) {
     return (
-      <Loading type="circular" color="#667eea" style={{ marginTop: '100rpx' }} />
+      <div className="loading-wrapper">
+        <Loading type="circular" color="#667eea" />
+      </div>
     )
   }
 
   return (
-    <div className="container" style={{ overflowY: 'auto', height: 'calc(100vh - 100px)' }}>
-      <CellGroup>
+    <div className="container">
+      <div className="room-card">
+        <div className="room-info-header">
+          <span className="room-name">{room.name}</span>
+          <span className="room-type">{room.type.name}</span>
+        </div>
+        <div className="room-price-hint">
+          <span className="price-label">单价</span>
+          <span className="price-value">¥{room.type.base_price}/小时</span>
+        </div>
+      </div>
+
+      <CellGroup className="form-group">
         <Cell
           title="选择日期"
           onClick={() => setShowCalendar(true)}
           description={selectedDate || '请选择日期'}
+          extra={<span className="cell-arrow">›</span>}
         />
 
         <Cell
           title="开始时间"
           onClick={() => setShowStartPicker(true)}
           description={startTime || '请选择开始时间'}
+          extra={<span className="cell-arrow">›</span>}
         />
 
         <Cell
           title="结束时间"
           onClick={() => setShowEndPicker(true)}
           description={endTime || '请选择结束时间'}
+          extra={<span className="cell-arrow">›</span>}
         />
 
         <Cell title="备注">
           <TextArea
-            placeholder="请输入备注信息"
+            placeholder="请输入备注信息（选填）"
             value={remark}
             onChange={(value) => setRemark(value)}
+            rows={3}
           />
         </Cell>
+      </CellGroup>
 
+      <CellGroup className="summary-group">
         <Cell title="预约信息">
           <div className="booking-summary">
             <div className="summary-item">

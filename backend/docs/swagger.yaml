@@ -1,0 +1,3652 @@
+basePath: /api
+definitions:
+  controller.ActivityCreateRequest:
+    properties:
+      description:
+        type: string
+      discount:
+        type: number
+      image:
+        type: string
+      name:
+        type: string
+      status:
+        type: integer
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    required:
+    - name
+    type: object
+  controller.ActivityUpdateRequest:
+    properties:
+      description:
+        type: string
+      discount:
+        type: number
+      image:
+        type: string
+      name:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    type: object
+  controller.AdminChangePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  controller.AdminLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  controller.AdminUpdateProfileRequest:
+    properties:
+      realname:
+        type: string
+      username:
+        type: string
+    type: object
+  controller.AnnouncementCreateRequest:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+      type:
+        type: integer
+    type: object
+  controller.AnnouncementUpdateRequest:
+    properties:
+      content:
+        type: string
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: integer
+    type: object
+  controller.ChangePasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  controller.HolidayCreateRequest:
+    properties:
+      date:
+        type: string
+      description:
+        type: string
+      is_holiday:
+        type: integer
+      name:
+        type: string
+    required:
+    - date
+    - name
+    type: object
+  controller.MembershipCreateRequest:
+    properties:
+      balance:
+        default: 0
+        type: number
+      expired_at:
+        type: string
+      level:
+        default: 0
+        type: integer
+      membership_status:
+        default: 1
+        type: integer
+      points:
+        default: 0
+        type: integer
+      total_consumed:
+        default: 0
+        type: number
+      total_recharged:
+        default: 0
+        type: number
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
+  controller.MembershipUpdateRequest:
+    properties:
+      balance:
+        type: number
+      expired_at:
+        type: string
+      level:
+        type: integer
+      membership_status:
+        type: integer
+      points:
+        type: integer
+    type: object
+  controller.NotificationCreateRequest:
+    properties:
+      content:
+        type: string
+      link:
+        type: string
+      read_status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: integer
+      user_id:
+        type: integer
+    required:
+    - title
+    type: object
+  controller.OperationLogCreateRequest:
+    properties:
+      action:
+        type: string
+      admin_id:
+        type: integer
+      content:
+        type: string
+      ip:
+        type: string
+      module:
+        type: string
+      target_id:
+        type: integer
+    required:
+    - action
+    - admin_id
+    type: object
+  controller.OrderCreateRequest:
+    properties:
+      end_time:
+        type: string
+      remark:
+        type: string
+      room_id:
+        type: integer
+      start_time:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - end_time
+    - room_id
+    - start_time
+    type: object
+  controller.OrderUpdateRequest:
+    properties:
+      duration:
+        type: integer
+      end_time:
+        type: string
+      remark:
+        type: string
+      start_time:
+        type: string
+      status:
+        type: integer
+    type: object
+  controller.RechargePackageCreateRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      gift_amount:
+        type: number
+      gift_points:
+        type: integer
+      name:
+        type: string
+    type: object
+  controller.RechargePackageUpdateRequest:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      gift_amount:
+        type: number
+      gift_points:
+        type: integer
+      name:
+        type: string
+      status:
+        type: integer
+    type: object
+  controller.RechargeRecordCreateRequest:
+    properties:
+      amount:
+        type: number
+      gift_amount:
+        type: number
+      payment_id:
+        type: integer
+      status:
+        type: integer
+      user_id:
+        type: integer
+    required:
+    - amount
+    - user_id
+    type: object
+  controller.RechargeRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+  controller.ReviewCreateRequest:
+    properties:
+      content:
+        type: string
+      images:
+        type: string
+      order_id:
+        type: integer
+      rating:
+        type: integer
+      room_id:
+        type: integer
+      status:
+        default: 1
+        type: integer
+      user_id:
+        type: integer
+    required:
+    - order_id
+    - rating
+    - room_id
+    type: object
+  controller.RoomCreateRequest:
+    properties:
+      capacity:
+        type: integer
+      floor:
+        type: string
+      images:
+        type: string
+      name:
+        type: string
+      type_id:
+        type: integer
+    required:
+    - capacity
+    - name
+    - type_id
+    type: object
+  controller.RoomUpdateRequest:
+    properties:
+      capacity:
+        type: integer
+      floor:
+        type: string
+      images:
+        type: string
+      name:
+        type: string
+      status:
+        type: integer
+      type_id:
+        type: integer
+    type: object
+  controller.TimeSlotCreateRequest:
+    properties:
+      end_time:
+        type: string
+      holiday_price:
+        type: number
+      name:
+        type: string
+      price:
+        type: number
+      sort_order:
+        type: integer
+      start_time:
+        type: string
+      status:
+        type: integer
+      type_id:
+        type: integer
+      weekday_price:
+        type: number
+      weekend_price:
+        type: number
+    required:
+    - end_time
+    - name
+    - start_time
+    - type_id
+    type: object
+  controller.TimeSlotUpdateRequest:
+    properties:
+      end_time:
+        type: string
+      holiday_price:
+        type: number
+      name:
+        type: string
+      price:
+        type: number
+      sort_order:
+        type: integer
+      start_time:
+        type: string
+      status:
+        type: integer
+      type_id:
+        type: integer
+      weekday_price:
+        type: number
+      weekend_price:
+        type: number
+    type: object
+  controller.UpdateUserStatusRequest:
+    properties:
+      status:
+        type: integer
+    type: object
+  controller.UserLoginRequest:
+    properties:
+      avatar:
+        type: string
+      gender:
+        type: integer
+      nickname:
+        type: string
+      open_id:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+    type: object
+  controller.UserUpdateRequest:
+    properties:
+      avatar:
+        type: string
+      gender:
+        type: integer
+      nickname:
+        type: string
+      realname:
+        type: string
+    type: object
+  controller.WechatLoginRequest:
+    properties:
+      avatar:
+        type: string
+      code:
+        type: string
+      gender:
+        type: integer
+      nickname:
+        type: string
+    type: object
+  controller.WechatPayRequest:
+    properties:
+      amount:
+        type: number
+      open_id:
+        type: string
+      order_id:
+        type: integer
+    type: object
+  model.Activity:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      discount:
+        type: number
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+      valid_from:
+        type: string
+      valid_to:
+        type: string
+    type: object
+  model.Admin:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      realname:
+        type: string
+      role:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  model.Announcement:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      title:
+        type: string
+      type:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.Membership:
+    properties:
+      balance:
+        type: number
+      created_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: integer
+      joined_at:
+        type: string
+      level:
+        type: integer
+      membership_status:
+        type: integer
+      points:
+        type: integer
+      total_consumed:
+        type: number
+      total_recharged:
+        type: number
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+      user_id:
+        type: integer
+    type: object
+  model.Order:
+    properties:
+      cancel_time:
+        type: string
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      duration:
+        type: integer
+      end_time:
+        type: string
+      id:
+        type: integer
+      order_no:
+        type: string
+      paid_amount:
+        type: number
+      paid_at:
+        type: string
+      remark:
+        type: string
+      room:
+        $ref: '#/definitions/model.Room'
+      room_id:
+        type: integer
+      start_time:
+        type: string
+      status:
+        type: integer
+      total_amount:
+        type: number
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+      user_id:
+        type: integer
+    type: object
+  model.RechargePackage:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      gift_amount:
+        type: number
+      gift_points:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.RechargeRecord:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      gift_amount:
+        type: number
+      id:
+        type: integer
+      payment_id:
+        type: integer
+      status:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  model.Review:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      images:
+        type: string
+      order_id:
+        type: integer
+      rating:
+        type: integer
+      room_id:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+      user_id:
+        type: integer
+    type: object
+  model.Room:
+    properties:
+      capacity:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      equipment:
+        type: string
+      floor:
+        type: string
+      id:
+        type: integer
+      images:
+        type: string
+      name:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      type:
+        $ref: '#/definitions/model.RoomType'
+      type_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.RoomType:
+    properties:
+      base_price:
+        type: number
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      max_people:
+        type: integer
+      name:
+        type: string
+      sort_order:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.User:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      gender:
+        type: integer
+      id:
+        type: integer
+      nickname:
+        type: string
+      open_id:
+        type: string
+      phone:
+        type: string
+      realname:
+        type: string
+      status:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      code:
+        description: 响应状态码
+        type: integer
+      data:
+        description: 响应数据，omitempty表示为空时不序列化
+      message:
+        description: 响应消息
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: 棋室管理系统后端 API 文档
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: 棋室管理系统 API
+  version: "1.0"
+paths:
+  /activities:
+    get:
+      consumes:
+      - application/json
+      description: 获取活动列表，管理员查看全部，普通用户只看启用的活动
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Activity'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取活动列表
+      tags:
+      - 活动
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建新活动
+      parameters:
+      - description: 活动信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.ActivityCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建活动
+      tags:
+      - 活动
+  /activities/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除活动
+      parameters:
+      - description: 活动ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除活动
+      tags:
+      - 活动
+    get:
+      consumes:
+      - application/json
+      description: 根据活动ID获取活动详情
+      parameters:
+      - description: 活动ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取活动详情
+      tags:
+      - 活动
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新活动信息
+      parameters:
+      - description: 活动ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 活动更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.ActivityUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Activity'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新活动
+      tags:
+      - 活动
+  /admin/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 管理员修改登录密码
+      parameters:
+      - description: 密码修改信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 管理员修改密码
+      tags:
+      - 管理员
+  /admin/login:
+    post:
+      consumes:
+      - application/json
+      description: 管理员账号密码登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 管理员登录
+      tags:
+      - 管理员
+  /admin/profile:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录管理员的个人信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Admin'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取管理员信息
+      tags:
+      - 管理员
+    put:
+      consumes:
+      - application/json
+      description: 更新当前登录管理员的个人信息
+      parameters:
+      - description: 管理员更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminUpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Admin'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新管理员信息
+      tags:
+      - 管理员
+  /announcements:
+    get:
+      consumes:
+      - application/json
+      description: 获取公告列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Announcement'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取公告列表
+      tags:
+      - 公告
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建新公告
+      parameters:
+      - description: 公告信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AnnouncementCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Announcement'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建公告
+      tags:
+      - 公告
+  /announcements/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除公告
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除公告
+      tags:
+      - 公告
+    get:
+      consumes:
+      - application/json
+      description: 根据公告ID获取公告详情
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Announcement'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取公告详情
+      tags:
+      - 公告
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新公告信息
+      parameters:
+      - description: 公告ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 公告更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AnnouncementUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Announcement'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新公告
+      tags:
+      - 公告
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: 服务健康检查接口
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              status:
+                type: string
+            type: object
+      summary: 健康检查
+      tags:
+      - 系统
+  /holidays:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有节假日列表
+      parameters:
+      - description: 是否节假日
+        in: query
+        name: is_holiday
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取节假日列表
+      tags:
+      - 节假日
+    post:
+      consumes:
+      - application/json
+      description: 创建新的节假日
+      parameters:
+      - description: 节假日信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.HolidayCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建节假日
+      tags:
+      - 节假日
+  /holidays/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除节假日
+      parameters:
+      - description: 节假日ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除节假日
+      tags:
+      - 节假日
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取节假日详情
+      parameters:
+      - description: 节假日ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取节假日详情
+      tags:
+      - 节假日
+    put:
+      consumes:
+      - application/json
+      description: 更新节假日信息
+      parameters:
+      - description: 节假日ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 节假日信息
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新节假日
+      tags:
+      - 节假日
+  /membership:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的会员信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Membership'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取会员信息
+      tags:
+      - 会员
+  /membership/recharge:
+    post:
+      consumes:
+      - application/json
+      description: 用户进行会员储值
+      parameters:
+      - description: 储值信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RechargeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Membership'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 会员储值
+      tags:
+      - 会员
+  /membership/recharges:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的储值记录
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.RechargeRecord'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取储值记录
+      tags:
+      - 会员
+  /memberships:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取会员列表，支持按等级、状态筛选
+      parameters:
+      - description: 会员等级
+        in: query
+        name: level
+        type: integer
+      - description: 会员状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Membership'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取会员列表
+      tags:
+      - 会员
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建会员
+      parameters:
+      - description: 会员信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.MembershipCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Membership'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建会员
+      tags:
+      - 会员
+  /memberships/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除会员
+      parameters:
+      - description: 会员ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除会员
+      tags:
+      - 会员
+    get:
+      consumes:
+      - application/json
+      description: 管理员根据会员ID获取会员详情
+      parameters:
+      - description: 会员ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Membership'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取会员详情
+      tags:
+      - 会员
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新会员信息
+      parameters:
+      - description: 会员ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 会员更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.MembershipUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Membership'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新会员信息
+      tags:
+      - 会员
+  /notifications:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有通知列表
+      parameters:
+      - description: 用户ID
+        in: query
+        name: user_id
+        type: string
+      - description: 类型
+        in: query
+        name: type
+        type: string
+      - description: 读取状态
+        in: query
+        name: read_status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取通知列表
+      tags:
+      - 通知管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的通知
+      parameters:
+      - description: 通知信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.NotificationCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建通知
+      tags:
+      - 通知管理
+  /notifications/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除通知
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除通知
+      tags:
+      - 通知管理
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取通知详情
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取通知详情
+      tags:
+      - 通知管理
+    put:
+      consumes:
+      - application/json
+      description: 更新通知信息
+      parameters:
+      - description: 通知ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 通知信息
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新通知
+      tags:
+      - 通知管理
+  /notifications/mark-all-read:
+    post:
+      consumes:
+      - application/json
+      description: 标记用户的所有通知为已读
+      parameters:
+      - description: 用户ID
+        in: query
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 标记全部已读
+      tags:
+      - 通知管理
+  /operation-logs:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有操作日志列表
+      parameters:
+      - description: 管理员ID
+        in: query
+        name: admin_id
+        type: string
+      - description: 模块
+        in: query
+        name: module
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取操作日志列表
+      tags:
+      - 操作日志管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的操作日志
+      parameters:
+      - description: 操作日志信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.OperationLogCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建操作日志
+      tags:
+      - 操作日志管理
+  /operation-logs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除操作日志
+      parameters:
+      - description: 操作日志ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除操作日志
+      tags:
+      - 操作日志管理
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取操作日志详情
+      parameters:
+      - description: 操作日志ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取操作日志详情
+      tags:
+      - 操作日志管理
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: 获取用户或管理员的订单列表
+      parameters:
+      - description: 房间ID
+        in: query
+        name: room_id
+        type: integer
+      - description: 订单状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Order'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取订单列表
+      tags:
+      - 订单
+    post:
+      consumes:
+      - application/json
+      description: 用户创建新订单，管理员可指定用户ID
+      parameters:
+      - description: 订单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.OrderCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建订单
+      tags:
+      - 订单
+  /orders/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除订单
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除订单
+      tags:
+      - 订单
+    get:
+      consumes:
+      - application/json
+      description: 根据订单ID获取订单详情
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取订单详情
+      tags:
+      - 订单
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新订单信息
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 订单更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.OrderUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新订单
+      tags:
+      - 订单
+  /orders/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: 用户取消未支付的订单
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 取消订单
+      tags:
+      - 订单
+  /orders/{id}/complete:
+    put:
+      consumes:
+      - application/json
+      description: 用户或管理员完成订单
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 完成订单
+      tags:
+      - 订单
+  /orders/{id}/confirm:
+    put:
+      consumes:
+      - application/json
+      description: 用户或管理员确认订单
+      parameters:
+      - description: 订单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Order'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 确认订单
+      tags:
+      - 订单
+  /payments:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有支付记录列表
+      parameters:
+      - description: 用户ID
+        in: query
+        name: user_id
+        type: string
+      - description: 支付类型
+        in: query
+        name: payment_type
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取支付列表
+      tags:
+      - 支付管理
+  /payments/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除支付记录
+      parameters:
+      - description: 支付ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除支付记录
+      tags:
+      - 支付管理
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取支付记录详情
+      parameters:
+      - description: 支付ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取支付详情
+      tags:
+      - 支付管理
+    put:
+      consumes:
+      - application/json
+      description: 更新支付记录信息
+      parameters:
+      - description: 支付ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 支付信息
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新支付记录
+      tags:
+      - 支付管理
+  /recharge-packages:
+    get:
+      consumes:
+      - application/json
+      description: 获取储值套餐列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.RechargePackage'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取储值套餐列表
+      tags:
+      - 储值套餐
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建储值套餐
+      parameters:
+      - description: 储值套餐信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RechargePackageCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RechargePackage'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建储值套餐
+      tags:
+      - 储值套餐
+  /recharge-packages/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除储值套餐
+      parameters:
+      - description: 套餐ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除储值套餐
+      tags:
+      - 储值套餐
+    get:
+      consumes:
+      - application/json
+      description: 根据套餐ID获取储值套餐详情
+      parameters:
+      - description: 套餐ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RechargePackage'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取储值套餐详情
+      tags:
+      - 储值套餐
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新储值套餐信息
+      parameters:
+      - description: 套餐ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 储值套餐更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RechargePackageUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RechargePackage'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新储值套餐
+      tags:
+      - 储值套餐
+  /recharge-records:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有充值记录列表
+      parameters:
+      - description: 用户ID
+        in: query
+        name: user_id
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取充值记录列表
+      tags:
+      - 充值记录管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的充值记录
+      parameters:
+      - description: 充值记录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RechargeRecordCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建充值记录
+      tags:
+      - 充值记录管理
+  /recharge-records/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除充值记录
+      parameters:
+      - description: 充值记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除充值记录
+      tags:
+      - 充值记录管理
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取充值记录详情
+      parameters:
+      - description: 充值记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取充值记录详情
+      tags:
+      - 充值记录管理
+    put:
+      consumes:
+      - application/json
+      description: 更新充值记录信息
+      parameters:
+      - description: 充值记录ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 充值记录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新充值记录
+      tags:
+      - 充值记录管理
+  /reviews:
+    get:
+      consumes:
+      - application/json
+      description: 获取评价列表，支持按房间ID筛选
+      parameters:
+      - description: 房间ID
+        in: query
+        name: room_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Review'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取评价列表
+      tags:
+      - 评价
+    post:
+      consumes:
+      - application/json
+      description: 用户创建评价，管理员可指定用户ID和状态
+      parameters:
+      - description: 评价信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.ReviewCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Review'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建评价
+      tags:
+      - 评价
+  /reviews/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除评价
+      parameters:
+      - description: 评价ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除评价
+      tags:
+      - 评价
+    get:
+      consumes:
+      - application/json
+      description: 根据评价ID获取评价详情
+      parameters:
+      - description: 评价ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Review'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取评价详情
+      tags:
+      - 评价
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新评价
+      parameters:
+      - description: 评价ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 评价信息
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Review'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新评价
+      tags:
+      - 评价
+  /room:
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建新房间
+      parameters:
+      - description: 房间信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RoomCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Room'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建房间
+      tags:
+      - 房间
+  /room-types:
+    get:
+      consumes:
+      - application/json
+      description: 获取房间类型列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.RoomType'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取房间类型列表
+      tags:
+      - 房间类型
+    post:
+      consumes:
+      - application/json
+      description: 管理员创建房间类型
+      parameters:
+      - description: 房间类型信息
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RoomType'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建房间类型
+      tags:
+      - 房间类型
+  /room-types/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除房间类型
+      parameters:
+      - description: 房间类型ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除房间类型
+      tags:
+      - 房间类型
+    get:
+      consumes:
+      - application/json
+      description: 根据房间类型ID获取房间类型详情
+      parameters:
+      - description: 房间类型ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RoomType'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取房间类型详情
+      tags:
+      - 房间类型
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新房间类型信息
+      parameters:
+      - description: 房间类型ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 房间类型更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RoomType'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新房间类型
+      tags:
+      - 房间类型
+  /rooms:
+    get:
+      consumes:
+      - application/json
+      description: 获取房间列表，支持按类型、楼层、状态筛选
+      parameters:
+      - description: 房间类型ID
+        in: query
+        name: type_id
+        type: string
+      - description: 楼层
+        in: query
+        name: floor
+        type: string
+      - description: 房间状态
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Room'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取房间列表
+      tags:
+      - 房间
+  /rooms/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 管理员删除房间
+      parameters:
+      - description: 房间ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除房间
+      tags:
+      - 房间
+    get:
+      consumes:
+      - application/json
+      description: 根据房间ID获取房间详情
+      parameters:
+      - description: 房间ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Room'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取房间详情
+      tags:
+      - 房间
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新房间信息
+      parameters:
+      - description: 房间ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 房间更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.RoomUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Room'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新房间
+      tags:
+      - 房间
+  /time-slots:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有时间槽列表
+      parameters:
+      - description: 房间类型ID
+        in: query
+        name: type_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取时间槽列表
+      tags:
+      - 时间槽
+    post:
+      consumes:
+      - application/json
+      description: 创建新的时间槽
+      parameters:
+      - description: 时间槽信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.TimeSlotCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建时间槽
+      tags:
+      - 时间槽
+  /time-slots/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除时间槽
+      parameters:
+      - description: 时间槽ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除时间槽
+      tags:
+      - 时间槽
+    get:
+      consumes:
+      - application/json
+      description: 根据ID获取时间槽详情
+      parameters:
+      - description: 时间槽ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 获取时间槽详情
+      tags:
+      - 时间槽
+    put:
+      consumes:
+      - application/json
+      description: 更新时间槽信息
+      parameters:
+      - description: 时间槽ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 时间槽信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.TimeSlotUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新时间槽
+      tags:
+      - 时间槽
+  /user/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 用户修改登录密码
+      parameters:
+      - description: 密码修改信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 修改密码
+      tags:
+      - 用户
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的个人信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户信息
+      tags:
+      - 用户
+    put:
+      consumes:
+      - application/json
+      description: 用户更新个人信息
+      parameters:
+      - description: 用户更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.UserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户信息
+      tags:
+      - 用户
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录，支持微信登录、手机号登录和密码登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 用户登录
+      tags:
+      - 用户
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: 管理员获取用户列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.User'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表
+      tags:
+      - 用户
+  /users/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 管理员更新用户状态
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 用户状态更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.UpdateUserStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户状态
+      tags:
+      - 用户
+  /wechat/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户通过微信授权登录
+      parameters:
+      - description: 微信登录信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.WechatLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 微信登录
+      tags:
+      - 微信
+  /wechat/pay:
+    post:
+      consumes:
+      - application/json
+      description: 用户通过微信支付订单
+      parameters:
+      - description: 微信支付信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.WechatPayRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 微信支付
+      tags:
+      - 微信
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

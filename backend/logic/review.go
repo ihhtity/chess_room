@@ -61,3 +61,30 @@ func DeleteReview(id string) error {
 	}
 	return nil
 }
+
+func UpdateReview(id string, data map[string]interface{}) (*model.Review, error) {
+	reviewID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, errno.New(errno.BadRequest)
+	}
+
+	_, err = mysql.GetReviewByID(reviewID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errno.New(errno.ReviewNotFound)
+		}
+		return nil, errno.New(errno.InternalError)
+	}
+
+	if rating, ok := data["rating"]; ok {
+		if r, ok := rating.(float64); ok && (r < 1 || r > 5) {
+			return nil, errno.NewWithMessage(errno.BadRequest, "评分必须在1-5之间")
+		}
+	}
+
+	if err := mysql.UpdateReviewByID(reviewID, data); err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+
+	return mysql.GetReviewByID(reviewID)
+}

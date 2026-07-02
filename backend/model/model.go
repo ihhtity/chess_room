@@ -310,6 +310,7 @@ type Activity struct {
 	DeletedAt   *time.Time `gorm:"column:deleted_at" json:"-" comment:"删除时间"`
 }
 
+// 活动表
 func (Activity) TableName() string {
 	return "activities"
 }
@@ -327,6 +328,7 @@ type Announcement struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"-" comment:"删除时间"`
 }
 
+// 公告表
 func (Announcement) TableName() string {
 	return "announcements"
 }
@@ -345,6 +347,7 @@ type RechargePackage struct {
 	UpdatedAt   time.Time `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
 }
 
+// 充值套餐表
 func (RechargePackage) TableName() string {
 	return "recharge_packages"
 }
@@ -365,6 +368,7 @@ type Review struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"-" comment:"删除时间"`
 }
 
+// 评价表
 func (Review) TableName() string {
 	return "reviews"
 }
@@ -372,21 +376,21 @@ func (Review) TableName() string {
 // 自动迁移数据库表
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
-		&User{},
-		&Admin{},
-		&RoomType{},
-		&Room{},
-		&TimeSlot{},
-		&Order{},
-		&Payment{},
-		&Membership{},
-		&RechargeRecord{},
-		&Notification{},
-		&OperationLog{},
-		&Holiday{},
-		&Activity{},
-		&Announcement{},
-		&RechargePackage{},
-		&Review{},
+		&User{},            // 用户表
+		&Admin{},           // 管理员表
+		&RoomType{},        // 房间类型表
+		&Room{},            // 房间表
+		&TimeSlot{},        // 时间槽表
+		&Order{},           // 订单表
+		&Payment{},         // 支付表
+		&Membership{},      // 会员表
+		&RechargeRecord{},  // 充值记录表
+		&Notification{},    // 通知表
+		&OperationLog{},    // 操作日志表
+		&Holiday{},         // 节假日表
+		&Activity{},        // 活动表
+		&Announcement{},    // 公告表
+		&RechargePackage{}, // 充值套餐表
+		&Review{},          // 评价表
 	).Error
 }

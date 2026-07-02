@@ -2,18 +2,33 @@ package logic
 
 import (
 	"chess-room-backend/dao/mysql"
+	"chess-room-backend/dao/redis"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/errno"
+	"encoding/json"
 	"strconv"
 
 	"github.com/jinzhu/gorm"
 )
 
 func GetActivityList() ([]model.Activity, error) {
+	cacheKey := "activity:list"
+	if cacheData, err := redis.Get(cacheKey); err == nil && cacheData != "" {
+		var activities []model.Activity
+		if err := json.Unmarshal([]byte(cacheData), &activities); err == nil {
+			return activities, nil
+		}
+	}
+
 	activities, err := mysql.GetActivityList()
 	if err != nil {
 		return nil, errno.New(errno.InternalError)
 	}
+
+	if data, err := json.Marshal(activities); err == nil {
+		redis.Set(cacheKey, string(data), 300)
+	}
+
 	return activities, nil
 }
 
@@ -44,6 +59,7 @@ func CreateActivity(activity *model.Activity) error {
 	if err := mysql.CreateActivity(activity); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	redis.Del("activity:list")
 	return nil
 }
 
@@ -66,9 +82,11 @@ func UpdateActivity(id string, activity *model.Activity) error {
 	existing.ValidFrom = activity.ValidFrom
 	existing.ValidTo = activity.ValidTo
 	existing.Status = activity.Status
+	existing.SortOrder = activity.SortOrder
 	if err := mysql.UpdateActivity(existing); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	redis.Del("activity:list")
 	return nil
 }
 
@@ -80,5 +98,6 @@ func DeleteActivity(id string) error {
 	if err := mysql.DeleteActivity(activityID); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	redis.Del("activity:list")
 	return nil
 }

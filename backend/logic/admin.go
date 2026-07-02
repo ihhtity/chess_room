@@ -45,3 +45,53 @@ func GetAdminByID(id int64) (*model.Admin, error) {
 	}
 	return admin, nil
 }
+
+func UpdateAdminProfile(id int64, username, realname string) (*model.Admin, error) {
+	admin, err := mysql.GetAdminByID(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errno.New(errno.AdminNotFound)
+		}
+		return nil, errno.New(errno.InternalError)
+	}
+
+	if username != "" {
+		admin.Username = username
+	}
+	if realname != "" {
+		admin.Realname = realname
+	}
+
+	if err := mysql.UpdateAdmin(admin); err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+
+	return admin, nil
+}
+
+func AdminChangePassword(id int64, oldPassword, newPassword string) error {
+	admin, err := mysql.GetAdminByID(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errno.New(errno.AdminNotFound)
+		}
+		return errno.New(errno.InternalError)
+	}
+
+	if !utils.CheckPasswordHash(oldPassword, admin.Password) {
+		return errno.New(errno.PasswordError)
+	}
+
+	newPasswordHash, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return errno.New(errno.InternalError)
+	}
+
+	admin.Password = newPasswordHash
+
+	if err := mysql.UpdateAdmin(admin); err != nil {
+		return errno.New(errno.InternalError)
+	}
+
+	return nil
+}

@@ -4,119 +4,101 @@ import (
 	"chess-room-backend/dao/mysql"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/errno"
-	"fmt"
-	"time"
+	"strconv"
 
 	"github.com/jinzhu/gorm"
 )
 
-func CreatePayment(orderID, userID int64, amount float64, paymentType int) (*model.Payment, error) {
-	order, err := mysql.GetOrderByID(orderID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(errno.OrderNotFound)
-		}
-		return nil, errno.New(errno.InternalError)
-	}
-
-	if order.Status != 0 {
-		return nil, errno.New(errno.OrderStatusError)
-	}
-
-	if order.TotalAmount != amount {
-		return nil, errno.New(errno.PaymentFailed)
-	}
-
-	payment := &model.Payment{
-		OrderID:     orderID,
-		UserID:      userID,
-		Amount:      amount,
-		PaymentType: paymentType,
-		Status:      0,
-		TransactionNo: "TXN" + time.Now().Format("20060102150405") +
-			fmt.Sprintf("%d", time.Now().Nanosecond()%1000000000/100000000),
-	}
-
-	if err := mysql.CreatePayment(payment); err != nil {
-		return nil, errno.New(errno.InternalError)
-	}
-
-	return payment, nil
-}
-
-func GetPaymentByID(id int64) (*model.Payment, error) {
-	payment, err := mysql.GetPaymentByID(id)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(errno.PaymentNotFound)
-		}
-		return nil, errno.New(errno.InternalError)
-	}
-	return payment, nil
-}
-
-func GetPaymentByOrderID(orderID int64) (*model.Payment, error) {
-	payment, err := mysql.GetPaymentByOrderID(orderID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(errno.PaymentNotFound)
-		}
-		return nil, errno.New(errno.InternalError)
-	}
-	return payment, nil
-}
-
-func UpdatePaymentStatus(id int64, status int, transactionNo string) error {
-	payment, err := mysql.GetPaymentByID(id)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return errno.New(errno.PaymentNotFound)
-		}
-		return errno.New(errno.InternalError)
-	}
-
-	if payment.Status != 0 {
-		return errno.New(errno.PaymentAlreadyDone)
-	}
-
-	payment.Status = status
-	if transactionNo != "" {
-		payment.TransactionNo = transactionNo
-	}
-	now := time.Now()
-	payment.PaidAt = &now
-
-	if err := mysql.UpdatePayment(payment); err != nil {
-		return errno.New(errno.InternalError)
-	}
-
-	if status == 1 {
-		order, _ := mysql.GetOrderByID(payment.OrderID)
-		if order != nil && order.Status == 0 {
-			order.Status = 1
-			order.PaidAmount = payment.Amount
-			order.PaidAt = &now
-			mysql.UpdateOrder(order)
+func GetPaymentList(userID, paymentType, status string) ([]model.Payment, error) {
+	userIDInt := int64(0)
+	if userID != "" {
+		var err error
+		userIDInt, err = strconv.ParseInt(userID, 10, 64)
+		if err != nil {
+			return nil, errno.New(errno.BadRequest)
 		}
 	}
 
-	return nil
-}
+	paymentTypeInt := 0
+	if paymentType != "" {
+		var err error
+		paymentTypeInt, err = strconv.Atoi(paymentType)
+		if err != nil {
+			return nil, errno.New(errno.BadRequest)
+		}
+	}
 
-func GetPaymentList(userID int64, paymentType, status int) ([]model.Payment, error) {
-	payments, err := mysql.GetPaymentList(userID, paymentType, status)
+	statusInt := 0
+	if status != "" {
+		var err error
+		statusInt, err = strconv.Atoi(status)
+		if err != nil {
+			return nil, errno.New(errno.BadRequest)
+		}
+	}
+
+	payments, err := mysql.GetPaymentList(userIDInt, paymentTypeInt, statusInt)
 	if err != nil {
 		return nil, errno.New(errno.InternalError)
 	}
 	return payments, nil
 }
 
-func GetPaymentByOrderNo(orderNo string) (*model.Payment, error) {
-	payment, err := mysql.GetPaymentByOrderNo(orderNo)
+func GetPaymentByID(id string) (*model.Payment, error) {
+	paymentID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, errno.New(errno.BadRequest)
+	}
+	payment, err := mysql.GetPaymentByID(paymentID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, errno.New(errno.PaymentNotFound)
+			return nil, errno.New(errno.NotFound)
 		}
+		return nil, errno.New(errno.InternalError)
+	}
+	return payment, nil
+}
+
+func UpdatePayment(id string, data map[string]interface{}) (*model.Payment, error) {
+	paymentID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, errno.New(errno.BadRequest)
+	}
+
+	payment, err := mysql.GetPaymentByID(paymentID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, errno.New(errno.NotFound)
+		}
+		return nil, errno.New(errno.InternalError)
+	}
+
+	if err := mysql.DB.Model(payment).Updates(data).Error; err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+
+	return mysql.GetPaymentByID(paymentID)
+}
+
+func DeletePayment(id string) error {
+	paymentID, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return errno.New(errno.BadRequest)
+	}
+	return mysql.DB.Delete(&model.Payment{}, paymentID).Error
+}
+
+func CreatePayment(orderID, userID int64, amount float64, paymentType int) (*model.Payment, error) {
+	payment := &model.Payment{
+		OrderID:       orderID,
+		UserID:        userID,
+		Amount:        amount,
+		PaymentType:   paymentType,
+		Status:        0,
+		TransactionNo: "TXN" + strconv.FormatInt(orderID, 10) + strconv.FormatInt(userID, 10),
+	}
+
+	if err := mysql.DB.Create(payment).Error; err != nil {
 		return nil, errno.New(errno.InternalError)
 	}
 	return payment, nil

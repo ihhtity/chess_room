@@ -17,6 +17,16 @@ type WechatLoginRequest struct {
 	Gender   int    `json:"gender"`
 }
 
+// @Summary 微信登录
+// @Description 用户通过微信授权登录
+// @Tags 微信
+// @Accept json
+// @Produce json
+// @Param body body WechatLoginRequest true "微信登录信息"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /wechat/login [post]
 func WechatLogin(c *gin.Context) {
 	var req WechatLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,6 +58,17 @@ type WechatPayRequest struct {
 	OpenID  string  `json:"open_id"`
 }
 
+// @Summary 微信支付
+// @Description 用户通过微信支付订单
+// @Tags 微信
+// @Accept json
+// @Produce json
+// @Param body body WechatPayRequest true "微信支付信息"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /wechat/pay [post]
 func WechatPay(c *gin.Context) {
 	var req WechatPayRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

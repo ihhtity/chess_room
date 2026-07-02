@@ -53,6 +53,8 @@ const (
 	ReviewNotFound    ErrCode = 7301
 	ReviewAlreadyDone ErrCode = 7302
 
+	TimeSlotNotFound ErrCode = 2201
+
 	WechatError ErrCode = 6001
 )
 
@@ -91,6 +93,7 @@ var errMessages = map[ErrCode]string{
 	RechargePackageNotFound: "充值套餐不存在",
 	ReviewNotFound:          "评价不存在",
 	ReviewAlreadyDone:       "该订单已评价",
+	TimeSlotNotFound:        "时间槽不存在",
 	WechatError:             "微信接口错误",
 }
 

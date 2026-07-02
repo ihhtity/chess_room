@@ -137,6 +137,78 @@ export interface RechargePackage {
   updated_at: string
 }
 
+export interface Review {
+  id: number
+  order_id: number
+  user_id: number
+  user: User
+  room_id: number
+  rating: number
+  content: string
+  images: string
+  status: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TimeSlot {
+  id: number
+  type_id: number
+  name: string
+  start_time: string
+  end_time: string
+  price: number
+  weekday_price: number
+  weekend_price: number
+  holiday_price: number
+  sort_order: number
+  status: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Holiday {
+  id: number
+  name: string
+  date: string
+  is_holiday: number
+  description: string
+  created_at: string
+  updated_at: string
+}
+
+export interface RechargeRecord {
+  id: number
+  user_id: number
+  amount: number
+  gift_amount: number
+  payment_id: number
+  status: number
+  created_at: string
+}
+
+export interface Notification {
+  id: number
+  user_id: number
+  type: number
+  title: string
+  content: string
+  read_status: number
+  link: string
+  created_at: string
+}
+
+export interface OperationLog {
+  id: number
+  admin_id: number
+  action: string
+  module: string
+  target_id: number
+  content: string
+  ip: string
+  created_at: string
+}
+
 export interface ApiResponse<T = any> {
   code: number
   message: string

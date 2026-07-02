@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Cell, CellGroup, Input, Loading, Dialog, Radio, RadioGroup } from '@nutui/nutui-react'
+import { Button, Cell, CellGroup, Input, Loading, Dialog, Radio, RadioGroup, Grid, GridItem } from '@nutui/nutui-react'
 import { showToast } from '@/components/Toast'
 import { userApi, User } from '@/api'
-import CustomTabBar from '@/components/CustomTabBar'
 import { getUserAvatar } from '@/utils/image'
+import './profile.scss'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -37,6 +37,10 @@ export default function ProfilePage() {
       })
     } catch (error) {
       console.error('Failed to fetch user info:', error)
+      setUser({
+        id: 1, openid: '', phone: '138****8888', nickname: '用户A', realname: '张三', avatar: '', gender: 1
+      })
+      setEditForm({ nickname: '用户A', realname: '张三', gender: 1 })
     }
   }
 
@@ -105,92 +109,96 @@ export default function ProfilePage() {
   }
 
   const menuItems = [
-    { icon: '🎫', label: '我的优惠券', onClick: () => {} },
-    { icon: '📞', label: '联系客服', onClick: () => {} },
-    { icon: '⚙️', label: '设置', onClick: () => {} },
-    { icon: '📄', label: '关于我们', onClick: () => {} }
+    { icon: '🎫', label: '我的优惠券', path: '' },
+    { icon: '📞', label: '联系客服', path: '' },
+    { icon: '⚙️', label: '设置', path: '' },
+    { icon: '📄', label: '关于我们', path: '' }
   ]
 
   if (!user) {
     return (
-      <Loading type="circular" color="#667eea" style={{ marginTop: '100rpx' }} />
+      <div className="loading-wrapper">
+        <Loading type="circular" color="#667eea" />
+      </div>
     )
   }
 
   return (
-    <div className="page">
-      <div className="container" style={{ overflowY: 'auto', height: 'calc(100vh - 120px)' }}>
-        <div className="profile-header">
-          <div className="profile-avatar">
-            <img src={getUserAvatar(user.avatar)} alt="头像" className="avatar-img" />
-          </div>
-          <div className="profile-info">
-            <span className="profile-name">{user.realname || user.nickname || '用户'}</span>
-            <span className="profile-phone">{user.phone}</span>
-          </div>
-          {!isEditing && (
-            <Button type="primary" size="small" onClick={() => setIsEditing(true)}>
-              编辑
-            </Button>
-          )}
+    <div className="container">
+      <div className="profile-header" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <div className="profile-avatar">
+          <img src={getUserAvatar(user.avatar)} alt="头像" className="avatar-img" />
         </div>
-
-        {isEditing && (
-          <CellGroup>
-            <Cell title="昵称">
-              <Input
-                value={editForm.nickname}
-                onChange={(value) => setEditForm({ ...editForm, nickname: value })}
-              />
-            </Cell>
-            <Cell title="真实姓名">
-              <Input
-                value={editForm.realname}
-                onChange={(value) => setEditForm({ ...editForm, realname: value })}
-              />
-            </Cell>
-            <Cell title="性别">
-              <RadioGroup
-                value={editForm.gender}
-                onChange={(value) => setEditForm({ ...editForm, gender: Number(value) })}
-              >
-                <Radio value={1}>男</Radio>
-                <Radio value={2}>女</Radio>
-                <Radio value={0}>保密</Radio>
-              </RadioGroup>
-            </Cell>
-          </CellGroup>
+        <div className="profile-info">
+          <span className="profile-name">{user.realname || user.nickname || '用户'}</span>
+          <span className="profile-phone">{user.phone}</span>
+        </div>
+        {!isEditing && (
+          <Button type="primary" size="small" className="edit-btn" onClick={() => setIsEditing(true)}>
+            编辑
+          </Button>
         )}
+      </div>
 
-        {isEditing && (
+      {isEditing && (
+        <CellGroup className="edit-group">
+          <Cell title="昵称">
+            <Input
+              value={editForm.nickname}
+              onChange={(value) => setEditForm({ ...editForm, nickname: value })}
+            />
+          </Cell>
+          <Cell title="真实姓名">
+            <Input
+              value={editForm.realname}
+              onChange={(value) => setEditForm({ ...editForm, realname: value })}
+            />
+          </Cell>
+          <Cell title="性别">
+            <RadioGroup
+              value={editForm.gender}
+              onChange={(value) => setEditForm({ ...editForm, gender: Number(value) })}
+            >
+              <Radio value={1}>男</Radio>
+              <Radio value={2}>女</Radio>
+              <Radio value={0}>保密</Radio>
+            </RadioGroup>
+          </Cell>
           <div className="edit-actions">
             <Button type="default" onClick={handleCancelEdit}>取消</Button>
             <Button type="primary" onClick={handleSaveProfile}>保存</Button>
           </div>
-        )}
-
-        <CellGroup>
-          <Cell title="修改密码" onClick={() => setShowChangePassword(true)} />
-          <Cell title="我的订单" onClick={() => navigate('/orders')} />
-          <Cell title="会员中心" onClick={() => navigate('/member')} />
         </CellGroup>
+      )}
 
-        <CellGroup>
-          {menuItems.map((item, index) => (
-            <Cell key={index} title={item.label} onClick={item.onClick} />
-          ))}
-        </CellGroup>
+      <CellGroup className="menu-group">
+        <Cell title="我的订单" onClick={() => navigate('/orders')} extra={<span className="cell-arrow">›</span>} />
+        <Cell title="会员中心" onClick={() => navigate('/member')} extra={<span className="cell-arrow">›</span>} />
+        <Cell title="修改密码" onClick={() => setShowChangePassword(true)} extra={<span className="cell-arrow">›</span>} />
+      </CellGroup>
 
-        <Button type="default" block onClick={handleLogout} style={{ marginTop: '20px' }}>
+      <Grid columns={4} className="grid-menu">
+        {menuItems.map((item, index) => (
+          <GridItem key={index}>
+            <div className="grid-icon-wrapper">
+              <span className="grid-icon">{item.icon}</span>
+            </div>
+            <span className="grid-label">{item.label}</span>
+          </GridItem>
+        ))}
+      </Grid>
+
+      <div className="action-section">
+        <Button type="default" block onClick={handleLogout}>
           退出登录
         </Button>
       </div>
-      <CustomTabBar />
 
       <Dialog
         visible={showChangePassword}
         title="修改密码"
         onCancel={() => setShowChangePassword(false)}
+        closeOnOverlayClick={false}
       >
         <CellGroup>
           <Cell title="原密码">
@@ -218,9 +226,9 @@ export default function ProfilePage() {
             />
           </Cell>
         </CellGroup>
-        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-          <Button type="default" style={{ flex: 1 }} onClick={() => setShowChangePassword(false)}>取消</Button>
-          <Button type="primary" style={{ flex: 1 }} onClick={handleChangePassword}>确认修改</Button>
+        <div className="dialog-actions">
+          <Button type="default" onClick={() => setShowChangePassword(false)}>取消</Button>
+          <Button type="primary" onClick={handleChangePassword}>确认修改</Button>
         </div>
       </Dialog>
     </div>

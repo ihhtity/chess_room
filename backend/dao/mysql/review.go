@@ -34,6 +34,10 @@ func UpdateReview(review *model.Review) error {
 	return DB.Save(review).Error
 }
 
+func UpdateReviewByID(id int64, data map[string]interface{}) error {
+	return DB.Model(&model.Review{}).Where("id = ?", id).Updates(data).Error
+}
+
 func DeleteReview(id int64) error {
 	return DB.Delete(&model.Review{}, id).Error
 }

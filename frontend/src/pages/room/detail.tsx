@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Cell, CellGroup, Loading, Badge, Divider, Empty } from '@nutui/nutui-react'
+import { Button, Cell, CellGroup, Loading, Badge, Divider, Empty, Rate } from '@nutui/nutui-react'
 import { roomApi, reviewApi, Room, Review } from '@/api'
 import { getRoomImage, getUserAvatar } from '@/utils/image'
+import './detail.scss'
 
 export default function RoomDetail() {
   const { id } = useParams<{ id: string }>()
@@ -71,12 +72,14 @@ export default function RoomDetail() {
 
   if (!room) {
     return (
-      <Loading type="circular" color="#667eea" style={{ marginTop: '100rpx' }} />
+      <div className="loading-wrapper">
+        <Loading type="circular" color="#667eea" />
+      </div>
     )
   }
 
   return (
-    <div className="container" style={{ overflowY: 'auto', height: 'calc(100vh - 100px)' }}>
+    <div className="container">
       <div className="room-images">
         <img
           className="room-image"
@@ -85,20 +88,23 @@ export default function RoomDetail() {
         />
       </div>
 
-      <CellGroup>
-        <Cell>
-          <div className="room-header">
-            <div>
-              <span className="room-name">{room.name}</span>
-              <div className="room-meta">
-                <span className="room-type">{room.type.name}</span>
-                <Badge value={getStatusText(room.status)} color={getStatusColor(room.status)} />
-              </div>
+      <div className="room-info-card">
+        <div className="room-header">
+          <div className="room-title-section">
+            <span className="room-name">{room.name}</span>
+            <div className="room-meta">
+              <span className="room-type-tag">{room.type.name}</span>
+              <Badge value={getStatusText(room.status)} color={getStatusColor(room.status)} />
             </div>
-            <span className="room-price">¥{room.type.base_price}<span className="price-unit">/小时</span></span>
           </div>
-        </Cell>
+          <div className="room-price-section">
+            <span className="room-price">¥{room.type.base_price}</span>
+            <span className="price-unit">/小时</span>
+          </div>
+        </div>
+      </div>
 
+      <CellGroup className="info-group">
         <Cell title="包间介绍" description={room.description || '暂无介绍'} />
 
         <Cell title="设备清单">
@@ -114,7 +120,7 @@ export default function RoomDetail() {
         <Cell title="基础价格" description={`¥${room.type.base_price}/小时`} />
       </CellGroup>
 
-      <Divider />
+      <Divider className="section-divider" />
 
       <div className="review-section">
         <div className="section-header">
@@ -122,7 +128,7 @@ export default function RoomDetail() {
           <span className="review-count">({reviews.length})</span>
         </div>
         {reviews.length > 0 ? (
-          <CellGroup>
+          <CellGroup className="review-group">
             {reviews.map(review => (
               <Cell key={review.id} className="review-cell">
                 <div className="review-card">
@@ -131,9 +137,7 @@ export default function RoomDetail() {
                       <img src={getUserAvatar(review.user?.avatar)} alt="" className="reviewer-avatar" />
                       <span className="reviewer-name">{review.user?.nickname || '用户'}</span>
                     </div>
-                    <div className="review-rating">
-                      {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                    </div>
+                    <Rate value={review.rating} readOnly />
                   </div>
                   <p className="review-content">{review.content}</p>
                   <span className="review-date">{review.created_at}</span>

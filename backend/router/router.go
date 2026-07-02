@@ -1,15 +1,12 @@
-// 定义包名为 router
 package router
 
-// 导入控制器包
 import (
-	// 导入控制器包
 	"chess-room-backend/controller"
-	// 导入中间件包
 	"chess-room-backend/middleware"
 
-	// 导入 Gin 框架
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // 设置路由函数，返回 Gin 引擎实例
@@ -17,15 +14,13 @@ func SetupRouter() *gin.Engine {
 	// 创建默认的 Gin 引擎
 	r := gin.Default()
 
-	// 使用 CORS 中间件
 	r.Use(middleware.CORSMiddleware())
-	// 使用日志中间件
 	r.Use(middleware.LoggerMiddleware())
 
-	// 注册健康检查路由
 	r.GET("/health", controller.HealthCheck)
 
-	// 创建 API 路由组
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	api := r.Group("/api")
 
 	// 创建用户路由组
@@ -95,6 +90,10 @@ func SetupRouter() *gin.Engine {
 		orders.POST("/", middleware.AuthMiddleware(), controller.CreateOrder)
 		// 取消订单（需要认证）
 		orders.PUT("/:id/cancel", middleware.AuthMiddleware(), controller.CancelOrder)
+		// 确认订单（需要认证）
+		orders.PUT("/:id/confirm", middleware.AuthMiddleware(), controller.ConfirmOrder)
+		// 完成订单（需要认证）
+		orders.PUT("/:id/complete", middleware.AuthMiddleware(), controller.CompleteOrder)
 	}
 
 	// 创建订单管理路由组（管理员端）
@@ -104,36 +103,14 @@ func SetupRouter() *gin.Engine {
 		order.GET("/", middleware.AdminMiddleware(), controller.GetOrderList)
 		// 获取订单详情（需要管理员权限）
 		order.GET("/:id", middleware.AdminMiddleware(), controller.GetOrderDetail)
+		// 更新订单（需要管理员权限）
+		order.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateOrder)
 		// 确认订单（需要管理员权限）
 		order.PUT("/:id/confirm", middleware.AdminMiddleware(), controller.ConfirmOrder)
 		// 完成订单（需要管理员权限）
 		order.PUT("/:id/complete", middleware.AdminMiddleware(), controller.CompleteOrder)
 		// 删除订单（需要管理员权限）
 		order.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteOrder)
-	}
-
-	// 创建支付路由组（复数形式）
-	payments := api.Group("/payments")
-	{
-		// 创建支付（需要认证）
-		payments.POST("/", middleware.AuthMiddleware(), controller.CreatePayment)
-		// 根据订单号获取支付信息（需要认证）
-		payments.GET("/:orderNo", middleware.AuthMiddleware(), controller.GetPaymentByOrderNo)
-	}
-
-	// 创建支付路由组（单数形式）
-	payment := api.Group("/payment")
-	{
-		// 创建支付（需要认证）
-		payment.POST("/", middleware.AuthMiddleware(), controller.CreatePayment)
-		// 获取支付详情（需要认证）
-		payment.GET("/:id", middleware.AuthMiddleware(), controller.GetPaymentDetail)
-		// 获取支付列表（需要认证）
-		payment.GET("/", middleware.AuthMiddleware(), controller.GetPaymentList)
-		// 微信支付回调通知（公开）
-		payment.POST("/wechat-notify", controller.WechatPayNotify)
-		// 发起微信支付（需要认证）
-		payment.POST("/wechat", middleware.AuthMiddleware(), controller.WechatPay)
 	}
 
 	// 创建微信相关路由组
@@ -161,6 +138,8 @@ func SetupRouter() *gin.Engine {
 	{
 		// 获取会员列表（需要管理员权限）
 		memberships.GET("/", middleware.AdminMiddleware(), controller.GetMembershipList)
+		// 创建会员（需要管理员权限）
+		memberships.POST("/", middleware.AdminMiddleware(), controller.CreateMembership)
 		// 获取会员详情（需要管理员权限）
 		memberships.GET("/:id", middleware.AdminMiddleware(), controller.GetMembershipDetail)
 		// 更新会员信息（需要管理员权限）
@@ -183,6 +162,10 @@ func SetupRouter() *gin.Engine {
 		admin.POST("/login", controller.AdminLogin)
 		// 获取管理员信息（需要管理员权限）
 		admin.GET("/profile", middleware.AdminMiddleware(), controller.GetAdminProfile)
+		// 更新管理员信息（需要管理员权限）
+		admin.PUT("/profile", middleware.AdminMiddleware(), controller.UpdateAdminProfile)
+		// 修改管理员密码（需要管理员权限）
+		admin.POST("/change-password", middleware.AdminMiddleware(), controller.AdminChangePassword)
 	}
 
 	// 创建活动路由组
@@ -230,6 +213,21 @@ func SetupRouter() *gin.Engine {
 		rechargePackages.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteRechargePackage)
 	}
 
+	// 创建时间槽路由组
+	timeSlots := api.Group("/time-slots")
+	{
+		// 获取时间槽列表（公开）
+		timeSlots.GET("/", controller.GetTimeSlotList)
+		// 获取时间槽详情（公开）
+		timeSlots.GET("/:id", controller.GetTimeSlotDetail)
+		// 创建时间槽（需要管理员权限）
+		timeSlots.POST("/", middleware.AdminMiddleware(), controller.CreateTimeSlot)
+		// 更新时间槽（需要管理员权限）
+		timeSlots.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateTimeSlot)
+		// 删除时间槽（需要管理员权限）
+		timeSlots.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteTimeSlot)
+	}
+
 	// 创建评价路由组
 	reviews := api.Group("/reviews")
 	{
@@ -237,10 +235,85 @@ func SetupRouter() *gin.Engine {
 		reviews.GET("/", controller.GetReviewList)
 		// 获取评价详情（公开）
 		reviews.GET("/:id", controller.GetReviewDetail)
-		// 创建评价（需要认证）
+		// 创建评价（需要认证，管理员可指定用户）
 		reviews.POST("/", middleware.AuthMiddleware(), controller.CreateReview)
+		// 更新评价（需要管理员权限）
+		reviews.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateReview)
 		// 删除评价（需要管理员权限）
 		reviews.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteReview)
+	}
+
+	// 创建节假日路由组
+	holidays := api.Group("/holidays")
+	{
+		// 获取节假日列表（公开）
+		holidays.GET("/", controller.GetHolidayList)
+		// 获取节假日详情（公开）
+		holidays.GET("/:id", controller.GetHolidayDetail)
+		// 创建节假日（需要管理员权限）
+		holidays.POST("/", middleware.AdminMiddleware(), controller.CreateHoliday)
+		// 更新节假日（需要管理员权限）
+		holidays.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateHoliday)
+		// 删除节假日（需要管理员权限）
+		holidays.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteHoliday)
+	}
+
+	// 创建支付路由组
+	paymentsApi := api.Group("/payments")
+	{
+		// 获取支付列表（公开）
+		paymentsApi.GET("/", controller.GetPaymentList)
+		// 获取支付详情（公开）
+		paymentsApi.GET("/:id", controller.GetPaymentDetail)
+		// 更新支付记录（需要管理员权限）
+		paymentsApi.PUT("/:id", middleware.AdminMiddleware(), controller.UpdatePayment)
+		// 删除支付记录（需要管理员权限）
+		paymentsApi.DELETE("/:id", middleware.AdminMiddleware(), controller.DeletePayment)
+	}
+
+	// 创建充值记录路由组
+	rechargeRecords := api.Group("/recharge-records")
+	{
+		// 获取充值记录列表（公开）
+		rechargeRecords.GET("/", controller.GetRechargeRecordList)
+		// 获取充值记录详情（公开）
+		rechargeRecords.GET("/:id", controller.GetRechargeRecordDetail)
+		// 创建充值记录（需要管理员权限）
+		rechargeRecords.POST("/", middleware.AdminMiddleware(), controller.CreateRechargeRecord)
+		// 更新充值记录（需要管理员权限）
+		rechargeRecords.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateRechargeRecord)
+		// 删除充值记录（需要管理员权限）
+		rechargeRecords.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteRechargeRecord)
+	}
+
+	// 创建通知路由组
+	notifications := api.Group("/notifications")
+	{
+		// 获取通知列表（公开）
+		notifications.GET("/", controller.GetNotificationList)
+		// 获取通知详情（公开）
+		notifications.GET("/:id", controller.GetNotificationDetail)
+		// 创建通知（需要管理员权限）
+		notifications.POST("/", middleware.AdminMiddleware(), controller.CreateNotification)
+		// 更新通知（需要管理员权限）
+		notifications.PUT("/:id", middleware.AdminMiddleware(), controller.UpdateNotification)
+		// 删除通知（需要管理员权限）
+		notifications.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteNotification)
+		// 标记全部已读（需要认证）
+		notifications.POST("/mark-all-read", middleware.AuthMiddleware(), controller.MarkAllNotificationAsRead)
+	}
+
+	// 创建操作日志路由组
+	operationLogs := api.Group("/operation-logs")
+	{
+		// 获取操作日志列表（公开）
+		operationLogs.GET("/", controller.GetOperationLogList)
+		// 获取操作日志详情（公开）
+		operationLogs.GET("/:id", controller.GetOperationLogDetail)
+		// 创建操作日志（需要管理员权限）
+		operationLogs.POST("/", middleware.AdminMiddleware(), controller.CreateOperationLog)
+		// 删除操作日志（需要管理员权限）
+		operationLogs.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteOperationLog)
 	}
 
 	// 返回配置好的路由引擎

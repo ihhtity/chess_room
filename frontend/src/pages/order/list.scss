@@ -1,89 +1,115 @@
-.tabs {
-  display: flex;
-  background: #fff;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
+.container {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
 
-  .tab {
-    flex: 1;
-    text-align: center;
-    padding: 16rpx 0;
-    font-size: 30rpx;
+:deep(.nut-tabs) {
+  :deep(.nut-tabs-header) {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  :deep(.nut-tabs-tab) {
+    font-size: 14px;
     color: #666;
-    position: relative;
-    transition: color 0.3s;
+    padding: 16px 0;
 
     &.active {
       color: #667eea;
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 40rpx;
-        height: 6rpx;
-        background: #667eea;
-        border-radius: 3rpx;
-      }
+      font-weight: 600;
     }
   }
 }
 
-.order-list {
-  padding: 20rpx;
+.loading-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.order-group {
+  margin: 16px;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.order-cell {
+  padding: 0 !important;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .order-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  padding: 20px;
 
   .order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20rpx;
+    margin-bottom: 16px;
 
-    .order-no {
-      font-size: 26rpx;
+    .order-id {
+      font-size: 13px;
       color: #999;
     }
 
     .order-status {
-      font-size: 28rpx;
-      font-weight: 500;
+      font-size: 14px;
+      font-weight: 600;
     }
   }
 
-  .order-room {
-    margin-bottom: 16rpx;
+  .order-room-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #f5f5f5;
 
-    .room-name {
-      font-size: 32rpx;
-      font-weight: 600;
-      color: #333;
-      display: block;
+    .room-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .room-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .room-type {
+        font-size: 12px;
+        color: #667eea;
+        padding: 3px 10px;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 10px;
+      }
     }
 
-    .room-type {
-      font-size: 26rpx;
+    .room-floor {
+      font-size: 13px;
       color: #999;
     }
   }
 
   .order-time {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20rpx;
-    font-size: 28rpx;
-    color: #666;
+    margin-bottom: 16px;
 
-    .time-icon {
-      margin-right: 12rpx;
+    .time-label {
+      font-size: 12px;
+      color: #999;
+      margin-right: 8px;
+    }
+
+    .time-value {
+      font-size: 14px;
+      color: #333;
     }
   }
 
@@ -92,43 +118,15 @@
     justify-content: space-between;
     align-items: center;
 
-    .order-price {
-      font-size: 32rpx;
+    .order-amount {
+      font-size: 16px;
       font-weight: 600;
       color: #ff4d4f;
     }
 
-    .order-actions {
+    .action-buttons {
       display: flex;
-      gap: 20rpx;
-
-      .action-btn {
-        padding: 12rpx 32rpx;
-        border-radius: 24rpx;
-        font-size: 28rpx;
-
-        &.cancel {
-          background: #f5f5f5;
-          color: #666;
-        }
-
-        &.pay {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #fff;
-        }
-      }
+      gap: 10px;
     }
-  }
-}
-
-.empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 100rpx 0;
-
-  .empty-text {
-    font-size: 30rpx;
-    color: #999;
   }
 }

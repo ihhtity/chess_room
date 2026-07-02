@@ -140,7 +140,13 @@ export const orderApi = {
     request.get<Order>(`/orders/${id}`),
   
   cancelOrder: (id: number) =>
-    request.put<any>(`/orders/${id}/cancel`)
+    request.put<any>(`/orders/${id}/cancel`),
+  
+  confirmOrder: (id: number) =>
+    request.put<any>(`/orders/${id}/confirm`),
+  
+  completeOrder: (id: number) =>
+    request.put<any>(`/orders/${id}/complete`)
 }
 
 export const paymentApi = {

@@ -68,9 +68,9 @@ export default function RoomTypeManage() {
     { title: '基础价格', dataIndex: 'base_price', key: 'base_price', render: (v: number) => `¥${v}/小时` },
     { title: '最大人数', dataIndex: 'max_people', key: 'max_people' },
     { title: '操作', key: 'action', render: (_: any, record: RoomType) => (
-      <div>
-        <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
       </div>
     )}
   ]
