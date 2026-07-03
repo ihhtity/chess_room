@@ -43,8 +43,8 @@ redis:
 jwt:
   # JWT密钥
   secret: chess-room-jwt-secret-key-2024
-  # 过期时间（秒）
-  expire_time: 7200
+  # 过期时间（秒），1个月约2592000秒
+  expire_time: 2592000
 
 # 微信支付配置
 wechat:
