@@ -79,7 +79,7 @@ func initDatabase() {
 			log.Logger.Fatal("数据库自动迁移失败:", err)
 		}
 		// 初始化默认数据
-		// model.InitDefaultData(mysql.DB)
+		model.InitDefaultData(mysql.DB)
 		// 记录初始化成功日志
 		log.Logger.Info("数据库初始化成功")
 	} else {

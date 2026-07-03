@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, DatePicker, Select, message, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, DatePicker, Select, message, Tag, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { holidayApi } from '@/api'
 import { Holiday } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function HolidayManage() {
   const [data, setData] = useState<Holiday[]>([])
@@ -14,9 +15,9 @@ export default function HolidayManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await holidayApi.getList()
+      const result = await holidayApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch holidays:', error)
@@ -86,11 +87,27 @@ export default function HolidayManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>节假日管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加节假日</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'name', label: '节假日名称', type: 'input', placeholder: '请输入节假日名称' },
+              { key: 'is_holiday', label: '类型', type: 'select', options: [
+                { label: '节假日', value: '1' },
+                { label: '工作日', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加节假日</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

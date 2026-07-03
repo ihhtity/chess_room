@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Tag, message } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Tag, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { paymentApi } from '@/api'
 import { Payment } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function PaymentManage() {
   const [data, setData] = useState<Payment[]>([])
@@ -14,9 +15,9 @@ export default function PaymentManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await paymentApi.getList()
+      const result = await paymentApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch payments:', error)
@@ -98,11 +99,33 @@ export default function PaymentManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>支付管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加支付记录</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'user_id', label: '用户ID', type: 'input', placeholder: '请输入用户ID' },
+              { key: 'payment_type', label: '支付方式', type: 'select', options: [
+                { label: '微信支付', value: '1' },
+                { label: '支付宝', value: '2' },
+                { label: '余额支付', value: '3' }
+              ]},
+              { key: 'status', label: '状态', type: 'select', options: [
+                { label: '待支付', value: '0' },
+                { label: '已支付', value: '1' },
+                { label: '支付失败', value: '2' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加支付记录</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

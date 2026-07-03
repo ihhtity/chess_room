@@ -5,6 +5,7 @@ import (
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,13 +28,14 @@ type RoomUpdateRequest struct {
 }
 
 // @Summary 获取房间列表
-// @Description 获取房间列表，支持按类型、楼层、状态筛选
+// @Description 获取房间列表，支持按类型、楼层、状态、名称筛选
 // @Tags 房间
 // @Accept json
 // @Produce json
 // @Param type_id query string false "房间类型ID"
 // @Param floor query string false "楼层"
 // @Param status query string false "房间状态"
+// @Param name query string false "房间名称"
 // @Success 200 {object} response.Response{data=[]model.Room}
 // @Failure 400 {object} response.Response
 // @Router /rooms [get]
@@ -41,20 +43,29 @@ func GetRoomList(c *gin.Context) {
 	typeID := c.Query("type_id")
 	floor := c.Query("floor")
 	status := c.Query("status")
+	name := c.Query("name")
 
-	var rooms []model.Room
+	typeIDInt := 0
+	statusInt := 0
 	var err error
 
 	if typeID != "" {
-		rooms, err = logic.GetRoomListByTypeID(typeID)
-	} else if floor != "" {
-		rooms, err = logic.GetRoomListByFloor(floor)
-	} else if status != "" {
-		rooms, err = logic.GetRoomListByStatus(status)
-	} else {
-		rooms, err = logic.GetRoomList()
+		typeIDInt, err = strconv.Atoi(typeID)
+		if err != nil {
+			response.Fail(c, 400, "类型ID格式错误")
+			return
+		}
 	}
 
+	if status != "" {
+		statusInt, err = strconv.Atoi(status)
+		if err != nil {
+			response.Fail(c, 400, "状态格式错误")
+			return
+		}
+	}
+
+	rooms, err := logic.GetRoomListFiltered(typeIDInt, floor, statusInt, name)
 	if err != nil {
 		response.HandleError(c, err)
 		return

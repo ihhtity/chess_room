@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Tag, message } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Tag, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { notificationApi } from '@/api'
 import { Notification } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function NotificationManage() {
   const [data, setData] = useState<Notification[]>([])
@@ -14,9 +15,9 @@ export default function NotificationManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await notificationApi.getList()
+      const result = await notificationApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
@@ -92,11 +93,33 @@ export default function NotificationManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>通知管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加通知</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'user_id', label: '用户ID', type: 'input', placeholder: '请输入用户ID' },
+              { key: 'type', label: '类型', type: 'select', options: [
+                { label: '系统通知', value: '0' },
+                { label: '订单通知', value: '1' },
+                { label: '活动通知', value: '2' },
+                { label: '会员通知', value: '3' }
+              ]},
+              { key: 'read_status', label: '状态', type: 'select', options: [
+                { label: '未读', value: '0' },
+                { label: '已读', value: '1' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加通知</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

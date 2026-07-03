@@ -14,6 +14,19 @@ func GetReviewList(roomID int) ([]model.Review, error) {
 	return reviews, err
 }
 
+func GetReviewListFiltered(roomID, status int) ([]model.Review, error) {
+	var reviews []model.Review
+	db := DB.Preload("User").Order("created_at DESC")
+	if roomID != 0 {
+		db = db.Where("room_id = ?", roomID)
+	}
+	if status != 0 {
+		db = db.Where("status = ?", status)
+	}
+	err := db.Find(&reviews).Error
+	return reviews, err
+}
+
 func GetReviewByOrderID(orderID int64) (*model.Review, error) {
 	var review model.Review
 	err := DB.Where("order_id = ?", orderID).First(&review).Error

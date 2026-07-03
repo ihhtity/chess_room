@@ -14,32 +14,27 @@ type Claims struct {
 	UserID               int64  `json:"user_id"`  // 用户 ID
 	Username             string `json:"username"` // 用户名
 	Role                 int    `json:"role"`     // 用户角色
+	RoleID               int64  `json:"role_id"`  // 角色ID
 	jwt.RegisteredClaims        // 内嵌标准声明
 }
 
 // 生成 JWT 令牌
-func GenerateToken(userID int64, username string, role int) (string, error) {
-	// 从配置中获取密钥
+func GenerateToken(userID int64, username string, role int, roleID int64) (string, error) {
 	secret := viper.GetString("jwt.secret")
-	// 从配置中获取过期时间
 	expireTime := viper.GetInt64("jwt.expire_time")
 
-	// 创建自定义声明
 	claims := Claims{
 		UserID:   userID,
 		Username: username,
 		Role:     role,
+		RoleID:   roleID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			// 设置过期时间
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * time.Duration(expireTime))),
-			// 设置签发时间
-			IssuedAt: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	// 使用 HS256 算法创建令牌
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// 使用密钥签名并返回令牌字符串
 	return token.SignedString([]byte(secret))
 }
 

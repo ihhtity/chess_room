@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { rechargePackageApi } from '@/api'
 import { RechargePackage } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function RechargePackageManage() {
   const [data, setData] = useState<RechargePackage[]>([])
@@ -14,9 +15,9 @@ export default function RechargePackageManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await rechargePackageApi.getList()
+      const result = await rechargePackageApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch recharge packages:', error)
@@ -82,11 +83,27 @@ export default function RechargePackageManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>充值套餐管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加套餐</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'name', label: '套餐名称', type: 'input', placeholder: '请输入套餐名称' },
+              { key: 'package_status', label: '状态', type: 'select', options: [
+                { label: '启用', value: '1' },
+                { label: '禁用', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加套餐</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

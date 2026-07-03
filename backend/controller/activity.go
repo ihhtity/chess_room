@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,20 +32,34 @@ type ActivityUpdateRequest struct {
 }
 
 // @Summary 获取活动列表
-// @Description 获取活动列表，管理员查看全部，普通用户只看启用的活动
+// @Description 获取活动列表，管理员查看全部，普通用户只看启用的活动，支持按名称、状态筛选
 // @Tags 活动
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param name query string false "活动名称"
+// @Param status query string false "活动状态"
 // @Success 200 {object} response.Response{data=[]model.Activity}
 // @Failure 400 {object} response.Response
 // @Router /activities [get]
 func GetActivityList(c *gin.Context) {
 	adminID := c.GetInt64("admin_id")
-	var activities []model.Activity
+	name := c.Query("name")
+	statusStr := c.Query("status")
+
+	status := -1
 	var err error
+	if statusStr != "" {
+		status, err = strconv.Atoi(statusStr)
+		if err != nil {
+			response.Fail(c, 400, "状态格式错误")
+			return
+		}
+	}
+
+	var activities []model.Activity
 	if adminID != 0 {
-		activities, err = logic.GetActivityListAdmin()
+		activities, err = logic.GetActivityListAdminFiltered(name, status)
 	} else {
 		activities, err = logic.GetActivityList()
 	}

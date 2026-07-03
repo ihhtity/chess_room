@@ -68,7 +68,7 @@ func UserLogin(openID, phone, password, nickname, avatar string, gender int) (*m
 		}
 	}
 
-	token, err := jwt.GenerateToken(user.ID, user.Nickname, 0)
+	token, err := jwt.GenerateToken(user.ID, user.Nickname, 0, 0)
 	if err != nil {
 		return nil, "", errno.New(errno.InternalError)
 	}

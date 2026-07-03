@@ -19,6 +19,10 @@ import RechargeRecordManage from '@/pages/RechargeRecordManage'
 import NotificationManage from '@/pages/NotificationManage'
 import OperationLogManage from '@/pages/OperationLogManage'
 import Profile from '@/pages/Profile'
+import RoleManage from '@/pages/RoleManage'
+import PermissionManage from '@/pages/PermissionManage'
+import AdminManage from '@/pages/AdminManage'
+import { PermissionProvider } from '@/context/PermissionContext'
 
 function App() {
   // 加载状态
@@ -46,48 +50,37 @@ function App() {
   }
 
   return (
-    // 路由配置
     <BrowserRouter>
-      {/* 路由配置 */}
       <Routes>
-        {/* 登录路由 */}
         <Route path="/login" element={<Login onLogin={() => setIsLoggedIn(true)} />} />
-        {/* 布局路由 */}
         <Route
           path="/*"
-          element={isLoggedIn ? <Layout /> : <Navigate to="/login" />}
+          element={isLoggedIn ? (
+            <PermissionProvider>
+              <Layout />
+            </PermissionProvider>
+          ) : (
+            <Navigate to="/login" />
+          )}
         >
-          {/* 首页路由 */}
           <Route index element={<Dashboard />} />
-          {/* 房间管理路由 */}
           <Route path="room" element={<RoomManage />} />
-          {/* 房间类型管理路由 */}
           <Route path="room-type" element={<RoomTypeManage />} />
-          {/* 订单管理路由 */}
           <Route path="order" element={<OrderManage />} />
-          {/* 会员管理路由 */}
           <Route path="member" element={<MemberManage />} />
-          {/* 活动管理路由 */}
           <Route path="activity" element={<ActivityManage />} />
-          {/* 公告管理路由 */}
           <Route path="announcement" element={<AnnouncementManage />} />
-          {/* 充值套餐管理路由 */}
           <Route path="recharge-package" element={<RechargePackageManage />} />
-          {/* 时间槽管理路由 */}
           <Route path="time-slot" element={<TimeSlotManage />} />
-          {/* 评价管理路由 */}
           <Route path="review" element={<ReviewManage />} />
-          {/* 节假日管理路由 */}
           <Route path="holiday" element={<HolidayManage />} />
-          {/* 支付管理路由 */}
           <Route path="payment" element={<PaymentManage />} />
-          {/* 充值记录管理路由 */}
           <Route path="recharge-record" element={<RechargeRecordManage />} />
-          {/* 通知管理路由 */}
           <Route path="notification" element={<NotificationManage />} />
-          {/* 操作日志管理路由 */}
           <Route path="operation-log" element={<OperationLogManage />} />
-          {/* 个人信息路由 */}
+          <Route path="role" element={<RoleManage />} />
+          <Route path="permission" element={<PermissionManage />} />
+          <Route path="admin-manage" element={<AdminManage />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>

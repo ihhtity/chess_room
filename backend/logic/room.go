@@ -32,6 +32,14 @@ func GetRoomList() ([]model.Room, error) {
 	return rooms, nil
 }
 
+func GetRoomListFiltered(typeID int, floor string, status int, name string) ([]model.Room, error) {
+	rooms, err := mysql.GetRoomListFiltered(typeID, floor, status, name)
+	if err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+	return rooms, nil
+}
+
 func GetRoomListByTypeID(typeID string) ([]model.Room, error) {
 	id, err := strconv.Atoi(typeID)
 	if err != nil {

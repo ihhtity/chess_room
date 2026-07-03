@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { roomApi, roomTypeApi } from '@/api'
 import { Room, RoomType } from '@/types'
 import { getRoomImage } from '@/utils/image'
+import SearchBar from '@/components/SearchBar'
 
 export default function RoomManage() {
   const [data, setData] = useState<Room[]>([])
@@ -17,9 +18,9 @@ export default function RoomManage() {
     fetchTypes()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await roomApi.getList()
+      const result = await roomApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch rooms:', error)
@@ -99,11 +100,31 @@ export default function RoomManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>包间管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加包间</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'name', label: '名称', type: 'input', placeholder: '请输入包间名称' },
+              { key: 'type_id', label: '类型', type: 'select', options: types.map(t => ({ label: t.name, value: String(t.id) })) },
+              { key: 'floor', label: '楼层', type: 'input', placeholder: '请输入楼层' },
+              { key: 'status', label: '状态', type: 'select', options: [
+                { label: '维护中', value: '0' },
+                { label: '空闲', value: '1' },
+                { label: '使用中', value: '2' },
+                { label: '已预约', value: '3' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加包间</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

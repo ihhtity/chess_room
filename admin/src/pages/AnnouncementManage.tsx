@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, message } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { announcementApi } from '@/api'
 import { Announcement } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function AnnouncementManage() {
   const [data, setData] = useState<Announcement[]>([])
@@ -14,9 +15,9 @@ export default function AnnouncementManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await announcementApi.getList()
+      const result = await announcementApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch announcements:', error)
@@ -86,11 +87,32 @@ export default function AnnouncementManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>公告管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加公告</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'title', label: '标题', type: 'input', placeholder: '请输入标题' },
+              { key: 'type', label: '类型', type: 'select', options: [
+                { label: '普通', value: '0' },
+                { label: '重要', value: '1' },
+                { label: '紧急', value: '2' }
+              ]},
+              { key: 'status', label: '状态', type: 'select', options: [
+                { label: '显示', value: '1' },
+                { label: '隐藏', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加公告</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

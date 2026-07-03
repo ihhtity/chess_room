@@ -83,7 +83,11 @@ type Admin struct {
 	Username  string    `gorm:"column:username;size:50;unique_index" json:"username" comment:"用户名"`
 	Password  string    `gorm:"column:password;size:255" json:"-" comment:"密码"`
 	Realname  string    `gorm:"column:realname;size:100" json:"realname" comment:"真实姓名"`
-	Role      int       `gorm:"column:role;default:0" json:"role" comment:"角色"`
+	Phone     string    `gorm:"column:phone;size:20;unique_index" json:"phone" comment:"手机号"`
+	Email     string    `gorm:"column:email;size:50;unique_index" json:"email" comment:"邮箱"`
+	RoleType  int       `gorm:"column:role;default:1" json:"role" comment:"管理员类型"`
+	RoleID    int64     `gorm:"column:role_id;default:1" json:"role_id" comment:"角色ID"`
+	Role      AdminRole `gorm:"foreignkey:RoleID;association_autoupdate:false;association_autocreate:false" json:"role" comment:"角色信息"`
 	Status    int       `gorm:"column:status;default:1" json:"status" comment:"状态"`
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
@@ -92,6 +96,50 @@ type Admin struct {
 // 管理员表
 func (Admin) TableName() string {
 	return "admins"
+}
+
+// 管理员角色表
+type AdminRole struct {
+	ID          int64     `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	Name        string    `gorm:"column:name;size:50;unique_index" json:"name" comment:"角色名称"`
+	Level       int       `gorm:"column:level;default:1" json:"level" comment:"角色层级（数字越小层级越高）"`
+	Description string    `gorm:"column:description;size:200" json:"description" comment:"角色描述"`
+	Status      int       `gorm:"column:status;default:1" json:"status" comment:"状态"`
+	CreatedAt   time.Time `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+	UpdatedAt   time.Time `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
+}
+
+// 管理员角色表
+func (AdminRole) TableName() string {
+	return "admin_roles"
+}
+
+// 权限表
+type Permission struct {
+	ID          int64     `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	Code        string    `gorm:"column:code;size:100;unique_index" json:"code" comment:"权限标识"`
+	Name        string    `gorm:"column:name;size:100" json:"name" comment:"权限名称"`
+	Group       string    `gorm:"column:group;size:50" json:"group" comment:"权限分组"`
+	Module      string    `gorm:"column:module;size:50" json:"module" comment:"所属模块"`
+	Description string    `gorm:"column:description;size:200" json:"description" comment:"描述"`
+	SortOrder   int       `gorm:"column:sort_order;default:0" json:"sort_order" comment:"排序"`
+	CreatedAt   time.Time `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+}
+
+// 权限表
+func (Permission) TableName() string {
+	return "permissions"
+}
+
+// 角色权限关联表
+type RolePermission struct {
+	RoleID       int64 `gorm:"column:role_id;index" json:"role_id" comment:"角色ID"`
+	PermissionID int64 `gorm:"column:permission_id;index" json:"permission_id" comment:"权限ID"`
+}
+
+// 角色权限关联表
+func (RolePermission) TableName() string {
+	return "role_permissions"
 }
 
 // 房间类型表
@@ -378,6 +426,9 @@ func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&User{},            // 用户表
 		&Admin{},           // 管理员表
+		&AdminRole{},       // 管理员角色表
+		&Permission{},      // 权限表
+		&RolePermission{},  // 角色权限关联表
 		&RoomType{},        // 房间类型表
 		&Room{},            // 房间表
 		&TimeSlot{},        // 时间槽表

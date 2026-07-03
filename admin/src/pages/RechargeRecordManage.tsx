@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Tag, message } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Tag, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { rechargeRecordApi } from '@/api'
 import { RechargeRecord } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function RechargeRecordManage() {
   const [data, setData] = useState<RechargeRecord[]>([])
@@ -14,9 +15,9 @@ export default function RechargeRecordManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await rechargeRecordApi.getList()
+      const result = await rechargeRecordApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch recharge records:', error)
@@ -87,11 +88,28 @@ export default function RechargeRecordManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>充值记录管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加充值记录</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'user_id', label: '用户ID', type: 'input', placeholder: '请输入用户ID' },
+              { key: 'status', label: '状态', type: 'select', options: [
+                { label: '待充值', value: '0' },
+                { label: '已充值', value: '1' },
+                { label: '充值失败', value: '2' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加充值记录</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

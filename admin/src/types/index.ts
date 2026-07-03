@@ -2,10 +2,34 @@ export interface Admin {
   id: number
   username: string
   realname: string
+  phone?: string
+  email?: string
   role: number
+  role_id: number
   status: number
   created_at: string
   updated_at: string
+}
+
+export interface AdminRole {
+  id: number
+  name: string
+  level: number
+  description: string
+  status: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Permission {
+  id: number
+  code: string
+  name: string
+  group: string
+  module: string
+  description: string
+  sort_order: number
+  created_at: string
 }
 
 export interface RoomType {

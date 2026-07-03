@@ -17,6 +17,14 @@ func GetAnnouncementList() ([]model.Announcement, error) {
 	return announcements, nil
 }
 
+func GetAnnouncementListFiltered(title string, typeInt, statusInt int) ([]model.Announcement, error) {
+	announcements, err := mysql.GetAnnouncementListFiltered(title, typeInt, statusInt)
+	if err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+	return announcements, nil
+}
+
 func GetAnnouncementByID(id string) (*model.Announcement, error) {
 	announcementID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

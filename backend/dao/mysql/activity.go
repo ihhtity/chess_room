@@ -18,6 +18,19 @@ func GetActivityListAdmin() ([]model.Activity, error) {
 	return activities, err
 }
 
+func GetActivityListAdminFiltered(name string, status int) ([]model.Activity, error) {
+	var activities []model.Activity
+	db := DB.Order("sort_order ASC, created_at DESC")
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	if status >= 0 {
+		db = db.Where("status = ?", status)
+	}
+	err := db.Find(&activities).Error
+	return activities, err
+}
+
 func GetActivityByID(id int64) (*model.Activity, error) {
 	var activity model.Activity
 	err := DB.Where("id = ?", id).First(&activity).Error

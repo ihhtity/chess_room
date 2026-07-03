@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { timeSlotApi, roomTypeApi } from '@/api'
 import { TimeSlot, RoomType } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function TimeSlotManage() {
   const [data, setData] = useState<TimeSlot[]>([])
@@ -16,9 +17,9 @@ export default function TimeSlotManage() {
     fetchRoomTypes()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await timeSlotApi.getList()
+      const result = await timeSlotApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch time slots:', error)
@@ -106,11 +107,24 @@ export default function TimeSlotManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>时间槽管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加时间槽</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'type_id', label: '房间类型', type: 'select', options: roomTypes.map(t => ({ label: t.name, value: String(t.id) })) },
+              { key: 'name', label: '时间槽名称', type: 'input', placeholder: '请输入时间槽名称' }
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加时间槽</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

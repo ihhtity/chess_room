@@ -40,6 +40,14 @@ func GetActivityListAdmin() ([]model.Activity, error) {
 	return activities, nil
 }
 
+func GetActivityListAdminFiltered(name string, status int) ([]model.Activity, error) {
+	activities, err := mysql.GetActivityListAdminFiltered(name, status)
+	if err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+	return activities, nil
+}
+
 func GetActivityByID(id string) (*model.Activity, error) {
 	activityID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

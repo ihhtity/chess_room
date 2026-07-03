@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, message, Tag, Rate } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, message, Tag, Rate, Space } from 'antd'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { reviewApi, roomApi, userApi, orderApi } from '@/api'
 import { Review, Room, User, Order } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function ReviewManage() {
   const [data, setData] = useState<Review[]>([])
@@ -22,9 +23,9 @@ export default function ReviewManage() {
     fetchOrders()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await reviewApi.getList()
+      const result = await reviewApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch reviews:', error)
@@ -140,11 +141,35 @@ export default function ReviewManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>评价管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加评价</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'user_id', label: '用户', type: 'select', options: users.map(u => ({ label: u.nickname || u.realname, value: String(u.id) })) },
+              { key: 'room_id', label: '房间', type: 'select', options: rooms.map(r => ({ label: r.name, value: String(r.id) })) },
+              { key: 'rating', label: '评分', type: 'select', options: [
+                { label: '1星', value: '1' },
+                { label: '2星', value: '2' },
+                { label: '3星', value: '3' },
+                { label: '4星', value: '4' },
+                { label: '5星', value: '5' }
+              ]},
+              { key: 'review_status', label: '状态', type: 'select', options: [
+                { label: '显示', value: '1' },
+                { label: '隐藏', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加评价</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

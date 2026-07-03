@@ -40,7 +40,7 @@ func initDefaultAdmin(db *gorm.DB) {
 		Username: "admin",
 		Password: string(passwordHash),
 		Realname: "超级管理员",
-		Role:     0,
+		RoleID:   1,
 		Status:   1,
 	}
 

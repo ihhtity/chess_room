@@ -45,6 +45,23 @@ definitions:
       old_password:
         type: string
     type: object
+  controller.AdminCreateRequest:
+    properties:
+      password:
+        type: string
+      realname:
+        type: string
+      role_id:
+        type: integer
+      status:
+        type: integer
+      username:
+        type: string
+    required:
+    - password
+    - role_id
+    - username
+    type: object
   controller.AdminLoginRequest:
     properties:
       password:
@@ -55,10 +72,51 @@ definitions:
     - password
     - username
     type: object
+  controller.AdminResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+    required:
+    - new_password
+    type: object
+  controller.AdminRoleCreateRequest:
+    properties:
+      description:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+    required:
+    - level
+    - name
+    type: object
+  controller.AdminRoleUpdateRequest:
+    properties:
+      description:
+        type: string
+      level:
+        type: integer
+      name:
+        type: string
+      status:
+        type: integer
+    type: object
   controller.AdminUpdateProfileRequest:
     properties:
       realname:
         type: string
+      username:
+        type: string
+    type: object
+  controller.AdminUpdateRequest:
+    properties:
+      realname:
+        type: string
+      role_id:
+        type: integer
+      status:
+        type: integer
       username:
         type: string
     type: object
@@ -81,6 +139,15 @@ definitions:
         type: string
       type:
         type: integer
+    type: object
+  controller.AssignPermissionRequest:
+    properties:
+      permission_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - permission_ids
     type: object
   controller.ChangePasswordRequest:
     properties:
@@ -209,6 +276,37 @@ definitions:
       start_time:
         type: string
       status:
+        type: integer
+    type: object
+  controller.PermissionCreateRequest:
+    properties:
+      code:
+        type: string
+      description:
+        type: string
+      group:
+        type: string
+      module:
+        type: string
+      name:
+        type: string
+      sort_order:
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  controller.PermissionUpdateRequest:
+    properties:
+      description:
+        type: string
+      group:
+        type: string
+      module:
+        type: string
+      name:
+        type: string
+      sort_order:
         type: integer
     type: object
   controller.RechargePackageCreateRequest:
@@ -445,17 +543,40 @@ definitions:
     properties:
       created_at:
         type: string
+      email:
+        type: string
       id:
         type: integer
+      phone:
+        type: string
       realname:
         type: string
       role:
+        $ref: '#/definitions/model.AdminRole'
+      role_id:
         type: integer
       status:
         type: integer
       updated_at:
         type: string
       username:
+        type: string
+    type: object
+  model.AdminRole:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      name:
+        type: string
+      status:
+        type: integer
+      updated_at:
         type: string
     type: object
   model.Announcement:
@@ -543,6 +664,25 @@ definitions:
       user:
         $ref: '#/definitions/model.User'
       user_id:
+        type: integer
+    type: object
+  model.Permission:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      group:
+        type: string
+      id:
+        type: integer
+      module:
+        type: string
+      name:
+        type: string
+      sort_order:
         type: integer
     type: object
   model.RechargePackage:
@@ -712,7 +852,16 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取活动列表，管理员查看全部，普通用户只看启用的活动
+      description: 获取活动列表，管理员查看全部，普通用户只看启用的活动，支持按名称、状态筛选
+      parameters:
+      - description: 活动名称
+        in: query
+        name: name
+        type: string
+      - description: 活动状态
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -885,6 +1034,216 @@ paths:
       summary: 更新活动
       tags:
       - 活动
+  /admin/admins:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员列表（只能查看自己和比自己等级低的管理员）
+      parameters:
+      - description: 用户名
+        in: query
+        name: username
+        type: string
+      - description: 真实姓名
+        in: query
+        name: realname
+        type: string
+      - description: 角色ID
+        in: query
+        name: role_id
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Admin'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取管理员列表
+      tags:
+      - 管理员管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的管理员（只能创建比自己等级低的管理员）
+      parameters:
+      - description: 管理员信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Admin'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建管理员
+      tags:
+      - 管理员管理
+  /admin/admins/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除管理员（只能删除比自己等级低的管理员）
+      parameters:
+      - description: 管理员ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除管理员
+      tags:
+      - 管理员管理
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员信息（只能更新自己和比自己等级低的管理员）
+      parameters:
+      - description: 管理员ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 管理员更新信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Admin'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新管理员信息
+      tags:
+      - 管理员管理
+  /admin/admins/{id}/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: 重置管理员密码（只能重置比自己等级低的管理员）
+      parameters:
+      - description: 管理员ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 新密码
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 重置管理员密码
+      tags:
+      - 管理员管理
   /admin/change-password:
     post:
       consumes:
@@ -947,6 +1306,336 @@ paths:
       summary: 管理员登录
       tags:
       - 管理员
+  /admin/permissions:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有权限列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Permission'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取权限列表
+      tags:
+      - 权限管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新权限
+      parameters:
+      - description: 权限信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.PermissionCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Permission'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建权限
+      tags:
+      - 权限管理
+  /admin/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除权限
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除权限
+      tags:
+      - 权限管理
+    get:
+      consumes:
+      - application/json
+      description: 根据权限ID获取权限详情
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Permission'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取权限详情
+      tags:
+      - 权限管理
+    put:
+      consumes:
+      - application/json
+      description: 更新权限信息
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 权限信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.PermissionUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Permission'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新权限
+      tags:
+      - 权限管理
+  /admin/permissions/grouped:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有权限列表，按分组返回
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Permission'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取权限列表（按分组）
+      tags:
+      - 权限管理
+  /admin/permissions/mine:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录管理员的所有权限编码
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取当前管理员的权限列表
+      tags:
+      - 权限管理
+  /admin/permissions/role:
+    get:
+      consumes:
+      - application/json
+      description: 根据角色ID获取该角色的所有权限
+      parameters:
+      - description: 角色ID
+        in: query
+        name: role_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.Permission'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取角色权限
+      tags:
+      - 权限管理
+  /admin/permissions/role/{role_id}:
+    post:
+      consumes:
+      - application/json
+      description: 为角色分配权限（只能分配自己拥有的权限给层级低于自己的角色）
+      parameters:
+      - description: 角色ID
+        in: path
+        name: role_id
+        required: true
+        type: string
+      - description: 权限ID列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AssignPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 分配权限给角色
+      tags:
+      - 权限管理
   /admin/profile:
     get:
       consumes:
@@ -1013,11 +1702,255 @@ paths:
       summary: 更新管理员信息
       tags:
       - 管理员
+  /admin/roles:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有角色列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.AdminRole'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取角色列表
+      tags:
+      - 角色管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新角色（只能创建层级低于自己的角色）
+      parameters:
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminRoleCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建角色
+      tags:
+      - 角色管理
+  /admin/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除角色（只能删除层级低于自己的角色）
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
+      tags:
+      - 角色管理
+    get:
+      consumes:
+      - application/json
+      description: 根据角色ID获取角色详情
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取角色详情
+      tags:
+      - 角色管理
+    put:
+      consumes:
+      - application/json
+      description: 更新角色信息（只能修改层级低于自己的角色）
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.AdminRoleUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminRole'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新角色
+      tags:
+      - 角色管理
+  /admin/roles/available:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前管理员可以分配的角色列表（层级低于自己的角色）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.AdminRole'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取当前管理员可管理的角色列表
+      tags:
+      - 角色管理
   /announcements:
     get:
       consumes:
       - application/json
-      description: 获取公告列表
+      description: 获取公告列表，支持按标题、类型、状态筛选
+      parameters:
+      - description: 公告标题
+        in: query
+        name: title
+        type: string
+      - description: 公告类型
+        in: query
+        name: type
+        type: string
+      - description: 公告状态
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -2371,7 +3304,16 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取储值套餐列表
+      description: 获取储值套餐列表，支持按名称、状态筛选
+      parameters:
+      - description: 套餐名称
+        in: query
+        name: name
+        type: string
+      - description: 套餐状态
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -2693,11 +3635,15 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取评价列表，支持按房间ID筛选
+      description: 获取评价列表，支持按房间ID、状态筛选
       parameters:
       - description: 房间ID
         in: query
         name: room_id
+        type: integer
+      - description: 评价状态
+        in: query
+        name: status
         type: integer
       produces:
       - application/json
@@ -3086,7 +4032,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取房间列表，支持按类型、楼层、状态筛选
+      description: 获取房间列表，支持按类型、楼层、状态、名称筛选
       parameters:
       - description: 房间类型ID
         in: query
@@ -3099,6 +4045,10 @@ paths:
       - description: 房间状态
         in: query
         name: status
+        type: string
+      - description: 房间名称
+        in: query
+        name: name
         type: string
       produces:
       - application/json

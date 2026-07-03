@@ -20,9 +20,12 @@ const (
 	InvalidPassword ErrCode = 1005
 	UserDisabled    ErrCode = 1004
 
-	AdminNotFound ErrCode = 1101
-	AdminExists   ErrCode = 1102
-	AdminDisabled ErrCode = 1103
+	AdminNotFound    ErrCode = 1101
+	AdminExists      ErrCode = 1102
+	AdminDisabled    ErrCode = 1103
+	UsernameExists   ErrCode = 1104
+	PermissionDenied ErrCode = 1105
+	CannotDeleteSelf ErrCode = 1106
 
 	RoomNotFound ErrCode = 2001
 	RoomDisabled ErrCode = 2002
@@ -55,6 +58,8 @@ const (
 
 	TimeSlotNotFound ErrCode = 2201
 
+	RoleNotFound ErrCode = 8001
+
 	WechatError ErrCode = 6001
 )
 
@@ -73,6 +78,9 @@ var errMessages = map[ErrCode]string{
 	AdminNotFound:           "管理员不存在",
 	AdminExists:             "管理员已存在",
 	AdminDisabled:           "管理员已禁用",
+	UsernameExists:          "用户名已存在",
+	PermissionDenied:        "权限不足，无法操作",
+	CannotDeleteSelf:        "不能删除自己",
 	RoomNotFound:            "包间不存在",
 	RoomDisabled:            "包间不可用",
 	RoomOccupied:            "包间已被占用",
@@ -94,6 +102,7 @@ var errMessages = map[ErrCode]string{
 	ReviewNotFound:          "评价不存在",
 	ReviewAlreadyDone:       "该订单已评价",
 	TimeSlotNotFound:        "时间槽不存在",
+	RoleNotFound:            "角色不存在",
 	WechatError:             "微信接口错误",
 }
 

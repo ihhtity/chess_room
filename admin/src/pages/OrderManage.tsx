@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, DatePicker, InputNumber, Input, message, Card, Tag, Select } from 'antd'
+import { Table, Button, Modal, Form, DatePicker, InputNumber, Input, message, Card, Tag, Select, Space } from 'antd'
 import { EyeOutlined, EditOutlined, CheckOutlined, StopOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { orderApi, roomApi, userApi } from '@/api'
 import { Order, Room, User } from '@/types'
+import { usePermission } from '@/context/PermissionContext'
+import SearchBar from '@/components/SearchBar'
 
 export default function OrderManage() {
   const [data, setData] = useState<Order[]>([])
@@ -16,6 +18,7 @@ export default function OrderManage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
   const [addForm] = Form.useForm()
+  const { hasPermission } = usePermission()
 
   useEffect(() => {
     fetchData()
@@ -23,9 +26,9 @@ export default function OrderManage() {
     fetchUsers()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await orderApi.getList()
+      const result = await orderApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch orders:', error)
@@ -171,24 +174,54 @@ export default function OrderManage() {
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusTag(s) },
     { title: '操作', key: 'action', render: (_: any, record: Order) => (
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <Button size="small" icon={<EyeOutlined />} onClick={() => handleView(record.id)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>查看</Button>
-        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
-        {record.status === 0 && (
+        {hasPermission('order_view') && (
+          <Button size="small" icon={<EyeOutlined />} onClick={() => handleView(record.id)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>查看</Button>
+        )}
+        {hasPermission('order_edit') && (
+          <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
+        )}
+        {hasPermission('order_confirm') && record.status === 0 && (
           <Button size="small" icon={<CheckOutlined />} onClick={() => handleConfirm(record.id)} style={{ backgroundColor: '#722ed1', color: '#fff', borderColor: '#722ed1' }}>确认</Button>
         )}
-        {record.status === 1 && (
+        {hasPermission('order_confirm') && record.status === 1 && (
           <Button size="small" icon={<StopOutlined />} onClick={() => handleComplete(record.id)} style={{ backgroundColor: '#13c2c2', color: '#fff', borderColor: '#13c2c2' }}>完成</Button>
         )}
-        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        {hasPermission('order_delete') && (
+          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
+        )}
       </div>
     )}
   ]
+
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>订单管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加订单</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'order_no', label: '订单号', type: 'input', placeholder: '请输入订单号' },
+              { key: 'user_id', label: '用户', type: 'select', options: users.map(u => ({ label: u.nickname || u.realname, value: String(u.id) })) },
+              { key: 'room_id', label: '包间', type: 'select', options: rooms.map(r => ({ label: r.name, value: String(r.id) })) },
+              { key: 'status', label: '状态', type: 'select', options: [
+                { label: '待支付', value: '0' },
+                { label: '使用中', value: '1' },
+                { label: '已完成', value: '2' },
+                { label: '已取消', value: '3' },
+                { label: '退款中', value: '4' },
+                { label: '已退款', value: '5' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          {hasPermission('order_create') && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加订单</Button>
+          )}
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

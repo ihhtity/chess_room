@@ -10,6 +10,22 @@ func GetAnnouncementList() ([]model.Announcement, error) {
 	return announcements, err
 }
 
+func GetAnnouncementListFiltered(title string, typeInt, statusInt int) ([]model.Announcement, error) {
+	var announcements []model.Announcement
+	db := DB.Order("sort_order ASC, created_at DESC")
+	if title != "" {
+		db = db.Where("title LIKE ?", "%"+title+"%")
+	}
+	if typeInt >= 0 {
+		db = db.Where("type = ?", typeInt)
+	}
+	if statusInt >= 0 {
+		db = db.Where("status = ?", statusInt)
+	}
+	err := db.Find(&announcements).Error
+	return announcements, err
+}
+
 func GetAnnouncementByID(id int64) (*model.Announcement, error) {
 	var announcement model.Announcement
 	err := DB.Where("id = ?", id).First(&announcement).Error

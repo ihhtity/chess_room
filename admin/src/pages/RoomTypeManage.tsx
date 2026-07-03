@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, message } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, message, Space } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { roomTypeApi } from '@/api'
 import { RoomType } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function RoomTypeManage() {
   const [data, setData] = useState<RoomType[]>([])
@@ -14,9 +15,9 @@ export default function RoomTypeManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await roomTypeApi.getList()
+      const result = await roomTypeApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch room types:', error)
@@ -75,11 +76,23 @@ export default function RoomTypeManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>包间类型管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加类型</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'name', label: '名称', type: 'input', placeholder: '请输入包间类型名称' }
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加类型</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

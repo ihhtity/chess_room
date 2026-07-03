@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message, Tag, Space } from 'antd'
 import type { Dayjs } from 'dayjs'
 import dayjs from 'dayjs'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { activityApi } from '@/api'
 import { Activity } from '@/types'
+import SearchBar from '@/components/SearchBar'
 
 export default function ActivityManage() {
   const [data, setData] = useState<Activity[]>([])
@@ -16,9 +17,9 @@ export default function ActivityManage() {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await activityApi.getList()
+      const result = await activityApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch activities:', error)
@@ -101,11 +102,27 @@ export default function ActivityManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>活动管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加活动</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'name', label: '活动名称', type: 'input', placeholder: '请输入活动名称' },
+              { key: 'activity_status', label: '状态', type: 'select', options: [
+                { label: '启用', value: '1' },
+                { label: '禁用', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加活动</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

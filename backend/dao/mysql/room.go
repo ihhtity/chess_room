@@ -17,6 +17,25 @@ func GetRoomList(status, typeID int) ([]model.Room, error) {
 	return rooms, err
 }
 
+func GetRoomListFiltered(typeID int, floor string, status int, name string) ([]model.Room, error) {
+	var rooms []model.Room
+	db := DB.Preload("Type").Order("sort_order ASC")
+	if typeID != 0 {
+		db = db.Where("type_id = ?", typeID)
+	}
+	if floor != "" {
+		db = db.Where("floor = ?", floor)
+	}
+	if status != 0 {
+		db = db.Where("status = ?", status)
+	}
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	err := db.Find(&rooms).Error
+	return rooms, err
+}
+
 func GetRoomListByTypeID(typeID int) ([]model.Room, error) {
 	var rooms []model.Room
 	err := DB.Preload("Type").Where("type_id = ?", typeID).Order("sort_order ASC").Find(&rooms).Error

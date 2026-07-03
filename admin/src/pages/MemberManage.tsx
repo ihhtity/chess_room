@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, InputNumber, Select, DatePicker, message, Tag } from 'antd'
+import { Table, Button, Modal, Form, InputNumber, Select, DatePicker, message, Tag, Space } from 'antd'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { membershipApi, userApi } from '@/api'
 import { Membership, User } from '@/types'
 import { getUserAvatar } from '@/utils/image'
+import SearchBar from '@/components/SearchBar'
 
 export default function MemberManage() {
   const [data, setData] = useState<Membership[]>([])
@@ -20,9 +21,9 @@ export default function MemberManage() {
     fetchUsers()
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (params?: Record<string, string>) => {
     try {
-      const result = await membershipApi.getList()
+      const result = await membershipApi.getList(params)
       setData(result)
     } catch (error) {
       console.error('Failed to fetch members:', error)
@@ -145,11 +146,33 @@ export default function MemberManage() {
     )}
   ]
 
+  const handleSearch = (values: Record<string, string>) => {
+    fetchData(values)
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2>会员管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加会员</Button>
+        <Space>
+          <SearchBar
+            fields={[
+              { key: 'user_id', label: '用户', type: 'select', options: users.map(u => ({ label: u.nickname || u.realname, value: String(u.id) })) },
+              { key: 'level', label: '会员等级', type: 'select', options: [
+                { label: '普通会员', value: '0' },
+                { label: '白银会员', value: '1' },
+                { label: '黄金会员', value: '2' },
+                { label: '钻石会员', value: '3' }
+              ]},
+              { key: 'membership_status', label: '状态', type: 'select', options: [
+                { label: '正常', value: '1' },
+                { label: '禁用', value: '0' }
+              ]}
+            ]}
+            onSearch={handleSearch}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加会员</Button>
+        </Space>
       </div>
       <Table dataSource={data} columns={columns} rowKey="id" />
 

@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,15 +27,30 @@ type RechargePackageUpdateRequest struct {
 }
 
 // @Summary 获取储值套餐列表
-// @Description 获取储值套餐列表
+// @Description 获取储值套餐列表，支持按名称、状态筛选
 // @Tags 储值套餐
 // @Accept json
 // @Produce json
+// @Param name query string false "套餐名称"
+// @Param status query string false "套餐状态"
 // @Success 200 {object} response.Response{data=[]model.RechargePackage}
 // @Failure 400 {object} response.Response
 // @Router /recharge-packages [get]
 func GetRechargePackageList(c *gin.Context) {
-	packages, err := logic.GetRechargePackageList()
+	name := c.Query("name")
+	statusStr := c.Query("status")
+
+	status := -1
+	var err error
+	if statusStr != "" {
+		status, err = strconv.Atoi(statusStr)
+		if err != nil {
+			response.Fail(c, 400, "状态格式错误")
+			return
+		}
+	}
+
+	packages, err := logic.GetRechargePackageListFiltered(name, status)
 	if err != nil {
 		response.HandleError(c, err)
 		return

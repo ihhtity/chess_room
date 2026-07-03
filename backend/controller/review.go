@@ -20,17 +20,20 @@ type ReviewCreateRequest struct {
 }
 
 // @Summary 获取评价列表
-// @Description 获取评价列表，支持按房间ID筛选
+// @Description 获取评价列表，支持按房间ID、状态筛选
 // @Tags 评价
 // @Accept json
 // @Produce json
 // @Param room_id query int false "房间ID"
+// @Param status query int false "评价状态"
 // @Success 200 {object} response.Response{data=[]model.Review}
 // @Failure 400 {object} response.Response
 // @Router /reviews [get]
 func GetReviewList(c *gin.Context) {
 	roomID := c.Query("room_id")
-	var roomIDInt int
+	statusStr := c.Query("status")
+
+	var roomIDInt, statusInt int
 	var err error
 
 	if roomID != "" {
@@ -41,7 +44,15 @@ func GetReviewList(c *gin.Context) {
 		}
 	}
 
-	reviews, err := logic.GetReviewList(roomIDInt)
+	if statusStr != "" {
+		statusInt, err = strconv.Atoi(statusStr)
+		if err != nil {
+			response.Fail(c, 400, "参数错误")
+			return
+		}
+	}
+
+	reviews, err := logic.GetReviewListFiltered(roomIDInt, statusInt)
 	if err != nil {
 		response.HandleError(c, err)
 		return

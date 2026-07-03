@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,15 +23,42 @@ type AnnouncementUpdateRequest struct {
 }
 
 // @Summary 获取公告列表
-// @Description 获取公告列表
+// @Description 获取公告列表，支持按标题、类型、状态筛选
 // @Tags 公告
 // @Accept json
 // @Produce json
+// @Param title query string false "公告标题"
+// @Param type query string false "公告类型"
+// @Param status query string false "公告状态"
 // @Success 200 {object} response.Response{data=[]model.Announcement}
 // @Failure 400 {object} response.Response
 // @Router /announcements [get]
 func GetAnnouncementList(c *gin.Context) {
-	announcements, err := logic.GetAnnouncementList()
+	title := c.Query("title")
+	typeStr := c.Query("type")
+	statusStr := c.Query("status")
+
+	typeInt := -1
+	statusInt := -1
+	var err error
+
+	if typeStr != "" {
+		typeInt, err = strconv.Atoi(typeStr)
+		if err != nil {
+			response.Fail(c, 400, "类型格式错误")
+			return
+		}
+	}
+
+	if statusStr != "" {
+		statusInt, err = strconv.Atoi(statusStr)
+		if err != nil {
+			response.Fail(c, 400, "状态格式错误")
+			return
+		}
+	}
+
+	announcements, err := logic.GetAnnouncementListFiltered(title, typeInt, statusInt)
 	if err != nil {
 		response.HandleError(c, err)
 		return

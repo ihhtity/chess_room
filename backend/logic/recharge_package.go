@@ -17,6 +17,14 @@ func GetRechargePackageList() ([]model.RechargePackage, error) {
 	return packages, nil
 }
 
+func GetRechargePackageListFiltered(name string, status int) ([]model.RechargePackage, error) {
+	packages, err := mysql.GetRechargePackageListFiltered(name, status)
+	if err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+	return packages, nil
+}
+
 func GetRechargePackageByID(id string) (*model.RechargePackage, error) {
 	packageID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {

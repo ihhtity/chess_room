@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import { Admin, Room, RoomType, Order, Membership, User, Activity, Announcement, RechargePackage, Payment, Review, TimeSlot, Holiday, RechargeRecord, Notification, OperationLog } from '@/types'
+import { Admin, Room, RoomType, Order, Membership, User, Activity, Announcement, RechargePackage, Payment, Review, TimeSlot, Holiday, RechargeRecord, Notification, OperationLog, AdminRole, Permission } from '@/types'
 
 // 定义类型转换函数
 const cast = <T>(res: any): T => res as unknown as T
@@ -24,6 +24,29 @@ export const adminApi = {
   // 更新管理员密码
   changePassword: async (data: { old_password: string; new_password: string }) => {
     await request.post('/admin/change-password', data)
+  },
+  // 获取管理员列表
+  getList: async (params?: { username?: string; realname?: string; role_id?: string; status?: string }) => {
+    const res = await request.get('/admin/admins', { params })
+    return cast<Admin[]>(res)
+  },
+  // 创建管理员
+  create: async (data: { username: string; password: string; realname: string; phone?: string; email?: string; role_id?: number }) => {
+    const res = await request.post('/admin/admins', data)
+    return cast<Admin>(res)
+  },
+  // 更新管理员
+  update: async (id: number, data: Partial<Admin>) => {
+    const res = await request.put(`/admin/admins/${id}`, data)
+    return cast<Admin>(res)
+  },
+  // 删除管理员
+  delete: async (id: number) => {
+    await request.delete(`/admin/admins/${id}`)
+  },
+  // 重置管理员密码
+  resetPassword: async (id: number) => {
+    await request.post(`/admin/admins/${id}/reset-password`)
   }
 }
 
@@ -58,8 +81,8 @@ export const roomApi = {
 // 房间类型接口
 export const roomTypeApi = {
   // 获取房间类型列表
-  getList: async () => {
-    const res = await request.get('/room-type')
+  getList: async (params?: { name?: string }) => {
+    const res = await request.get('/room-type', { params })
     return cast<RoomType[]>(res)
   },
   // 获取房间类型详情
@@ -86,7 +109,7 @@ export const roomTypeApi = {
 // 订单接口
 export const orderApi = {
   // 获取订单列表
-  getList: async (params?: { room_id?: string; status?: string }) => {
+  getList: async (params?: { order_no?: string; user_id?: string; room_id?: string; status?: string }) => {
     const res = await request.get('/order', { params })
     return cast<Order[]>(res)
   },
@@ -124,7 +147,7 @@ export const orderApi = {
 // 会员接口
 export const membershipApi = {
   // 获取会员列表
-  getList: async (params?: { level?: string; status?: string }) => {
+  getList: async (params?: { user_id?: string; level?: string; membership_status?: string }) => {
     const res = await request.get('/memberships', { params })
     return cast<Membership[]>(res)
   },
@@ -166,8 +189,8 @@ export const userApi = {
 // 活动接口
 export const activityApi = {
   // 获取活动列表
-  getList: async () => {
-    const res = await request.get('/activities')
+  getList: async (params?: { title?: string; activity_status?: string }) => {
+    const res = await request.get('/activities', { params })
     return cast<Activity[]>(res)
   },
   // 获取活动详情
@@ -194,8 +217,8 @@ export const activityApi = {
 // 公告接口
 export const announcementApi = {
   // 获取公告列表
-  getList: async () => {
-    const res = await request.get('/announcements')
+  getList: async (params?: { title?: string; type?: string; status?: string }) => {
+    const res = await request.get('/announcements', { params })
     return cast<Announcement[]>(res)
   },
   // 获取公告详情
@@ -222,8 +245,8 @@ export const announcementApi = {
 // 充值套餐接口
 export const rechargePackageApi = {
   // 获取充值套餐列表
-  getList: async () => {
-    const res = await request.get('/recharge-packages')
+  getList: async (params?: { name?: string; package_status?: string }) => {
+    const res = await request.get('/recharge-packages', { params })
     return cast<RechargePackage[]>(res)
   },
   // 获取充值套餐详情
@@ -321,7 +344,7 @@ export const notificationApi = {
 
 // 操作日志接口
 export const operationLogApi = {
-  getList: async (params?: { admin_id?: string; module?: string }) => {
+  getList: async (params?: { admin_id?: string; action?: string; module?: string }) => {
     const res = await request.get('/operation-logs', { params })
     return cast<OperationLog[]>(res)
   },
@@ -341,8 +364,8 @@ export const operationLogApi = {
 // 评价接口
 export const reviewApi = {
   // 获取评价列表
-  getList: async () => {
-    const res = await request.get('/reviews')
+  getList: async (params?: { user_id?: string; room_id?: string; rating?: string; review_status?: string }) => {
+    const res = await request.get('/reviews', { params })
     return cast<Review[]>(res)
   },
   // 获取评价详情
@@ -391,28 +414,88 @@ export const holidayApi = {
 
 // 时间槽接口
 export const timeSlotApi = {
-  // 获取时间槽列表
   getList: async (params?: { type_id?: string }) => {
     const res = await request.get('/time-slots', { params })
     return cast<TimeSlot[]>(res)
   },
-  // 获取时间槽详情
   getDetail: async (id: number) => {
     const res = await request.get(`/time-slots/${id}`)
     return cast<TimeSlot>(res)
   },
-  // 创建时间槽
   create: async (data: Partial<TimeSlot>) => {
     const res = await request.post('/time-slots', data)
     return cast<TimeSlot>(res)
   },
-  // 更新时间槽
   update: async (id: number, data: Partial<TimeSlot>) => {
     const res = await request.put(`/time-slots/${id}`, data)
     return cast<TimeSlot>(res)
   },
-  // 删除时间槽
   delete: async (id: number) => {
     await request.delete(`/time-slots/${id}`)
+  }
+}
+
+// 角色管理接口
+export const roleApi = {
+  getList: async () => {
+    const res = await request.get('/admin/roles')
+    return cast<AdminRole[]>(res)
+  },
+  getDetail: async (id: number) => {
+    const res = await request.get(`/admin/roles/${id}`)
+    return cast<AdminRole>(res)
+  },
+  getAvailable: async () => {
+    const res = await request.get('/admin/roles/available')
+    return cast<AdminRole[]>(res)
+  },
+  create: async (data: { name: string; level: number; description?: string }) => {
+    const res = await request.post('/admin/roles', data)
+    return cast<AdminRole>(res)
+  },
+  update: async (id: number, data: Partial<AdminRole>) => {
+    const res = await request.put(`/admin/roles/${id}`, data)
+    return cast<AdminRole>(res)
+  },
+  delete: async (id: number) => {
+    await request.delete(`/admin/roles/${id}`)
+  }
+}
+
+// 权限管理接口
+export const permissionApi = {
+  getList: async () => {
+    const res = await request.get('/admin/permissions')
+    return cast<Permission[]>(res)
+  },
+  getGrouped: async () => {
+    const res = await request.get('/admin/permissions/grouped')
+    return cast<Permission[]>(res)
+  },
+  getDetail: async (id: number) => {
+    const res = await request.get(`/admin/permissions/${id}`)
+    return cast<Permission>(res)
+  },
+  getRolePermissions: async (roleId: number) => {
+    const res = await request.get('/admin/permissions/role', { params: { role_id: roleId } })
+    return cast<Permission[]>(res)
+  },
+  getMyPermissions: async () => {
+    const res = await request.get('/admin/permissions/mine')
+    return cast<string[]>(res)
+  },
+  create: async (data: Partial<Permission>) => {
+    const res = await request.post('/admin/permissions', data)
+    return cast<Permission>(res)
+  },
+  update: async (id: number, data: Partial<Permission>) => {
+    const res = await request.put(`/admin/permissions/${id}`, data)
+    return cast<Permission>(res)
+  },
+  delete: async (id: number) => {
+    await request.delete(`/admin/permissions/${id}`)
+  },
+  assign: async (roleId: number, permissionIds: number[]) => {
+    await request.post(`/admin/permissions/role/${roleId}`, { permission_ids: permissionIds })
   }
 }

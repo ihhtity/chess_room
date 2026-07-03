@@ -17,6 +17,14 @@ func GetReviewList(roomID int) ([]model.Review, error) {
 	return reviews, nil
 }
 
+func GetReviewListFiltered(roomID, status int) ([]model.Review, error) {
+	reviews, err := mysql.GetReviewListFiltered(roomID, status)
+	if err != nil {
+		return nil, errno.New(errno.InternalError)
+	}
+	return reviews, nil
+}
+
 func GetReviewByID(id string) (*model.Review, error) {
 	reviewID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
