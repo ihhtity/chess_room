@@ -9,13 +9,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetNotificationList(userID, notificationType, readStatus string) ([]model.Notification, error) {
+func GetNotificationList(userID, notificationType, readStatus string, page, pageSize int) ([]model.Notification, int64, error) {
 	userIDInt := int64(0)
 	if userID != "" {
 		var err error
 		userIDInt, err = strconv.ParseInt(userID, 10, 64)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
@@ -24,7 +24,7 @@ func GetNotificationList(userID, notificationType, readStatus string) ([]model.N
 		var err error
 		notificationTypeInt, err = strconv.Atoi(notificationType)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
@@ -33,15 +33,15 @@ func GetNotificationList(userID, notificationType, readStatus string) ([]model.N
 		var err error
 		readStatusInt, err = strconv.Atoi(readStatus)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
-	notifications, err := mysql.GetNotificationList(userIDInt, notificationTypeInt, readStatusInt)
+	notifications, total, err := mysql.GetNotificationList(userIDInt, notificationTypeInt, readStatusInt, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return notifications, nil
+	return notifications, total, nil
 }
 
 func GetNotificationByID(id string) (*model.Notification, error) {
@@ -94,6 +94,43 @@ func DeleteNotification(id string) error {
 	}
 	if err := mysql.DeleteNotification(notificationID); err != nil {
 		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeleteNotification(ids []string) error {
+	var idInts []int64
+	for _, id := range ids {
+		intID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		idInts = append(idInts, intID)
+	}
+	if err := mysql.BatchDeleteNotification(idInts); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateNotification(reqs []struct {
+	ID         int64 `json:"id"`
+	ReadStatus int   `json:"read_status"`
+}) error {
+	for _, req := range reqs {
+		notification, err := mysql.GetNotificationByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.NotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		notification.ReadStatus = req.ReadStatus
+
+		if err := mysql.UpdateNotificationByID(req.ID, map[string]interface{}{"read_status": req.ReadStatus}); err != nil {
+			return errno.New(errno.InternalError)
+		}
 	}
 	return nil
 }

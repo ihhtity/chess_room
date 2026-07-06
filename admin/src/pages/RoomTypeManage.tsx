@@ -1,24 +1,41 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, message, Space } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, InputNumber, message, Checkbox } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { roomTypeApi } from '@/api'
 import { RoomType } from '@/types'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
 
 export default function RoomTypeManage() {
   const [data, setData] = useState<RoomType[]>([])
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedRoomTypes, setSelectedRoomTypes] = useState<RoomType[]>([])
   const [form] = Form.useForm()
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await roomTypeApi.getList(params)
-      setData(result)
+      const result = await roomTypeApi.getList({ ...params, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch room types:', error)
     }
@@ -46,6 +63,35 @@ export default function RoomTypeManage() {
     }
   }
 
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(r => ids.includes(String(r.id)))
+    setSelectedRoomTypes(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await roomTypeApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await roomTypeApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
   const handleSubmit = async (values: Partial<RoomType>) => {
     try {
       if (editingId) {
@@ -63,7 +109,24 @@ export default function RoomTypeManage() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id' },
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: RoomType) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '基础价格', dataIndex: 'base_price', key: 'base_price', render: (v: number) => `¥${v}/小时` },
@@ -82,19 +145,47 @@ export default function RoomTypeManage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>包间类型管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'name', label: '名称', type: 'input', placeholder: '请输入包间类型名称' }
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>包间类型管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="包间类型管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchEdit={handleBatchEdit}
+            onBatchDelete={handleBatchDelete}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加类型</Button>
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title={editingId ? '编辑包间类型' : '添加包间类型'}
@@ -121,6 +212,19 @@ export default function RoomTypeManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedRoomTypes}
+        fields={[
+          { key: 'name', label: '名称', type: 'input' },
+          { key: 'description', label: '描述', type: 'input' },
+          { key: 'base_price', label: '基础价格', type: 'number' },
+          { key: 'max_people', label: '最大人数', type: 'number' }
+        ]}
+        title="批量编辑包间类型"
+      />
     </div>
   )
 }

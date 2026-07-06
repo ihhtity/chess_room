@@ -9,7 +9,8 @@ import {
   CheckCircleOutlined
 } from '@ant-design/icons'
 import { roomApi, orderApi, membershipApi } from '@/api'
-import { Room, Order } from '@/types'
+import { Room, Order, Membership } from '@/types'
+import { formatDateTime } from '@/utils'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -42,19 +43,23 @@ export default function Dashboard() {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const [rooms, orders, members] = await Promise.all([
-        roomApi.getList(),
-        orderApi.getList(),
-        membershipApi.getList()
+      const [roomsRes, ordersRes, membersRes] = await Promise.all([
+        roomApi.getList({ page: '0', page_size: '0' }),
+        orderApi.getList({ page: '0', page_size: '0' }),
+        membershipApi.getList({ page: '0', page_size: '0' })
       ])
 
-      const activeRooms = rooms.filter(r => r.status === 2).length
-      const availableRooms = rooms.filter(r => r.status === 1).length
-      const todayOrders = orders.filter(o => isToday(o.created_at)).length
-      const completedOrders = orders.filter(o => o.status === 2).length
-      const todayRevenue = orders.filter(o => isToday(o.created_at)).reduce((sum, o) => sum + o.paid_amount, 0)
-      const totalRevenue = orders.reduce((sum, o) => sum + o.paid_amount, 0)
-      const activeMembers = members.filter(m => m.membership_status === 1).length
+      const rooms = Array.isArray(roomsRes) ? roomsRes : (roomsRes as { data: Room[] }).data
+      const orders = Array.isArray(ordersRes) ? ordersRes : (ordersRes as { data: Order[] }).data
+      const members = Array.isArray(membersRes) ? membersRes : (membersRes as { data: Membership[] }).data
+
+      const activeRooms = rooms.filter((r: Room) => r.status === 2).length
+      const availableRooms = rooms.filter((r: Room) => r.status === 1).length
+      const todayOrders = orders.filter((o: Order) => isToday(o.created_at)).length
+      const completedOrders = orders.filter((o: Order) => o.status === 2).length
+      const todayRevenue = orders.filter((o: Order) => isToday(o.created_at)).reduce((sum: number, o: Order) => sum + o.paid_amount, 0)
+      const totalRevenue = orders.reduce((sum: number, o: Order) => sum + o.paid_amount, 0)
+      const activeMembers = members.filter((m: Membership) => m.membership_status === 1).length
 
       setStats({
         totalRooms: rooms.length,
@@ -139,7 +144,7 @@ export default function Dashboard() {
     { title: '包间', dataIndex: 'room', key: 'room', render: (r: { name: string }) => r.name, width: 100 },
     { title: '金额', dataIndex: 'total_amount', key: 'total_amount', render: (v: number) => <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>¥{v}</span>, width: 100 },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getOrderStatusTag(s), width: 80 },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 160, ellipsis: true }
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 160, render: (t: string) => formatDateTime(t) }
   ]
 
   const roomColumns = [

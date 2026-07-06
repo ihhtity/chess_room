@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Space, message, Checkbox, Select, InputNumber } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, RestOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, RestOutlined, SearchOutlined } from '@ant-design/icons'
 import { adminApi, roleApi } from '@/api'
 import { Admin, AdminRole } from '@/types'
 import { usePermission } from '@/context/PermissionContext'
 import SearchBar from '@/components/SearchBar'
 import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
+import { formatDateTime } from '@/utils'
 
 export default function AdminManage() {
   const [admins, setAdmins] = useState<Admin[]>([])
@@ -16,13 +20,25 @@ export default function AdminManage() {
   const [isEdit, setIsEdit] = useState(false)
   const [currentAdmin, setCurrentAdmin] = useState<Admin | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedAdmins, setSelectedAdmins] = useState<Admin[]>([])
   const { hasPermission } = usePermission()
 
-  const fetchAdmins = async (params: Record<string, string> = {}) => {
+  const fetchAdmins = async (params: Record<string, string> = {}, page: number = currentPage, size: number = pageSize) => {
     setLoading(true)
     try {
-      const data = await adminApi.getList(params)
-      setAdmins(data)
+      const data = await adminApi.getList({ ...params, page: String(page), page_size: String(size) })
+      if (Array.isArray(data)) {
+        setAdmins(data)
+        setTotal(data.length)
+      } else if (data.data) {
+        setAdmins(data.data)
+        setTotal(data.total || 0)
+      }
     } catch (error) {
       message.error('获取管理员列表失败')
     } finally {
@@ -92,14 +108,30 @@ export default function AdminManage() {
       return
     }
     try {
-      for (const id of ids) {
-        await adminApi.delete(parseInt(id))
-      }
+      await adminApi.batchDelete(ids.map(id => parseInt(id)))
       message.success('批量删除成功')
       fetchAdmins()
       setSelectedRowKeys([])
     } catch (error) {
       message.error('批量删除失败')
+    }
+  }
+
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = admins.filter(a => ids.includes(String(a.id)))
+    setSelectedAdmins(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await adminApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchAdmins()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
     }
   }
 
@@ -143,6 +175,7 @@ export default function AdminManage() {
     {
       title: '选择',
       key: 'selection',
+      width: 60,
       render: (_: any, record: Admin) => (
         <Checkbox
           checked={selectedRowKeys.includes(String(record.id))}
@@ -156,6 +189,7 @@ export default function AdminManage() {
         />
       )
     },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '用户名', dataIndex: 'username', key: 'username' },
     { title: '真实姓名', dataIndex: 'realname', key: 'realname' },
     { title: '手机号', dataIndex: 'phone', key: 'phone' },
@@ -167,7 +201,7 @@ export default function AdminManage() {
       render: (role: AdminRole) => role ? role.name : '无角色' 
     },
     { title: '状态', dataIndex: 'status', key: 'status', render: (status: number) => status === 1 ? '启用' : '禁用' },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: (t: string) => formatDateTime(t) },
     {
       title: '操作',
       key: 'action',
@@ -189,9 +223,8 @@ export default function AdminManage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>管理者管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'username', label: '用户名', type: 'input', placeholder: '请输入用户名' },
@@ -204,21 +237,41 @@ export default function AdminManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>管理者管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={admins} filename="管理者管理数据" />
           <BatchActions
             selectedRowKeys={selectedRowKeys}
             onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
           />
           {hasPermission('admin_create') && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加管理者</Button>
           )}
-        </Space>
+        </div>
       </div>
       <Table
         dataSource={admins}
         columns={columns}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchAdmins({}, page, size)
+        }}
       />
       <Modal
         title={isEdit ? '编辑管理者' : '添加管理者'}
@@ -260,6 +313,20 @@ export default function AdminManage() {
           )}
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedAdmins}
+        fields={[
+          { key: 'realname', label: '真实姓名', type: 'input' },
+          { key: 'phone', label: '手机号', type: 'input' },
+          { key: 'email', label: '邮箱', type: 'input' },
+          { key: 'role_id', label: '角色', type: 'select', options: roles.map(r => ({ label: r.name, value: r.id })) },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }] }
+        ]}
+        title="批量编辑管理员"
+      />
     </div>
   )
 }

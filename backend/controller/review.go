@@ -20,26 +20,51 @@ type ReviewCreateRequest struct {
 }
 
 // @Summary 获取评价列表
-// @Description 获取评价列表，支持按房间ID、状态筛选
+// @Description 获取评价列表，支持按房间ID、用户ID、评分、状态筛选
 // @Tags 评价
 // @Accept json
 // @Produce json
 // @Param room_id query int false "房间ID"
+// @Param user_id query int false "用户ID"
+// @Param rating query int false "评分"
 // @Param status query int false "评价状态"
+// @Param page query int false "页码"
+// @Param page_size query int false "每页数量"
 // @Success 200 {object} response.Response{data=[]model.Review}
 // @Failure 400 {object} response.Response
 // @Router /reviews [get]
 func GetReviewList(c *gin.Context) {
 	roomID := c.Query("room_id")
+	userID := c.Query("user_id")
+	rating := c.Query("rating")
 	statusStr := c.Query("status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
-	var roomIDInt, statusInt int
+	var roomIDInt, userIDInt, ratingInt int
+	var statusInt int = -1
 	var err error
 
 	if roomID != "" {
 		roomIDInt, err = strconv.Atoi(roomID)
 		if err != nil {
 			response.Fail(c, 400, "参数错误")
+			return
+		}
+	}
+
+	if userID != "" {
+		userIDInt, err = strconv.Atoi(userID)
+		if err != nil {
+			response.Fail(c, 400, "参数错误")
+			return
+		}
+	}
+
+	if rating != "" {
+		ratingInt, err = strconv.Atoi(rating)
+		if err != nil || ratingInt < 1 || ratingInt > 5 {
+			response.Fail(c, 400, "评分参数错误")
 			return
 		}
 	}
@@ -52,12 +77,31 @@ func GetReviewList(c *gin.Context) {
 		}
 	}
 
-	reviews, err := logic.GetReviewListFiltered(roomIDInt, statusInt)
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	reviews, total, err := logic.GetReviewListFiltered(roomIDInt, userIDInt, ratingInt, statusInt, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, reviews)
+	response.Success(c, gin.H{
+		"data":  reviews,
+		"total": total,
+	})
 }
 
 // @Summary 获取评价详情
@@ -180,4 +224,65 @@ func DeleteReview(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除评价
+// @Description 管理员批量删除评价
+// @Tags 评价
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "评价ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /reviews/batch [delete]
+func BatchDeleteReview(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的评价")
+		return
+	}
+	if err := logic.BatchDeleteReview(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新评价
+// @Description 管理员批量更新评价状态
+// @Tags 评价
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "评价更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /reviews/batch [put]
+func BatchUpdateReview(c *gin.Context) {
+	var reqs []struct {
+		ID      int64  `json:"id"`
+		Rating  int    `json:"rating"`
+		Content string `json:"content"`
+		Status  int    `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateReview(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

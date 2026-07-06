@@ -8,30 +8,39 @@ interface BatchActionsProps {
   showEdit?: boolean
 }
 
-export default function BatchActions({ selectedRowKeys, onBatchDelete, onBatchEdit, showEdit = false }: BatchActionsProps) {
-  const hasSelected = selectedRowKeys.length > 0
+export default function BatchActions({ selectedRowKeys, onBatchDelete, onBatchEdit, showEdit = true }: BatchActionsProps) {
+  const hasSelection = selectedRowKeys.length > 0
 
   return (
     <Space>
-      {hasSelected && (
-        <>
-          {showEdit && onBatchEdit && (
-            <Button icon={<EditOutlined />} onClick={() => onBatchEdit(selectedRowKeys)}>
-              批量编辑 ({selectedRowKeys.length})
-            </Button>
-          )}
-          <Popconfirm
-            title={`确定删除选中的 ${selectedRowKeys.length} 条记录吗？`}
-            onConfirm={() => onBatchDelete(selectedRowKeys)}
-            okText="确定"
-            cancelText="取消"
+      {showEdit && (
+        <Popconfirm
+          title={`确定编辑选中的 ${selectedRowKeys.length} 条记录吗？`}
+          onConfirm={() => onBatchEdit?.(selectedRowKeys)}
+          okText="确定"
+          cancelText="取消"
+          disabled={!hasSelection}
+        >
+          <Button 
+            icon={<EditOutlined />} 
+            disabled={!hasSelection}
+            style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}
           >
-            <Button danger icon={<DeleteOutlined />}>
-              批量删除 ({selectedRowKeys.length})
-            </Button>
-          </Popconfirm>
-        </>
+            编辑 ({selectedRowKeys.length})
+          </Button>
+        </Popconfirm>
       )}
+      <Popconfirm
+        title={`确定删除选中的 ${selectedRowKeys.length} 条记录吗？`}
+        onConfirm={() => onBatchDelete?.(selectedRowKeys)}
+        okText="确定"
+        cancelText="取消"
+        disabled={!hasSelection}
+      >
+        <Button danger icon={<DeleteOutlined />} disabled={!hasSelection}>
+          删除 ({selectedRowKeys.length})
+        </Button>
+      </Popconfirm>
     </Space>
   )
 }

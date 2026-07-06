@@ -141,18 +141,18 @@ func canManageAdmin(currentAdminID, targetAdminID int64) (bool, error) {
 	return currentLevel < targetLevel, nil
 }
 
-func GetAdminList(currentAdminID int64, username, realname string, roleID int64, status int) ([]model.Admin, error) {
+func GetAdminList(currentAdminID int64, username, realname string, roleID int64, status, page, pageSize int) ([]model.Admin, int64, error) {
 	currentLevel, err := getAdminRoleLevel(currentAdminID)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
 
-	admins, err := mysql.GetAdminList(username, realname, roleID, status, currentLevel)
+	admins, total, err := mysql.GetAdminList(username, realname, roleID, status, currentLevel, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
 
-	return admins, nil
+	return admins, total, nil
 }
 
 func CreateAdmin(currentAdminID int64, username, password, realname string, roleID int64, status int) (*model.Admin, error) {
@@ -331,6 +331,86 @@ func ResetAdminPassword(currentAdminID, targetAdminID int64, newPassword string)
 	}
 
 	go RecordOperationLog(currentAdminID, "admin", "reset_password", targetAdminID, "重置管理员密码: "+admin.Username)
+
+	return nil
+}
+
+func BatchUpdateAdmin(currentAdminID int64, reqs []struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+	Realname string `json:"realname"`
+	Phone    string `json:"phone"`
+	Email    string `json:"email"`
+	RoleID   int64  `json:"role_id"`
+	Status   int    `json:"status"`
+}) error {
+	for _, req := range reqs {
+		if currentAdminID == req.ID {
+			continue
+		}
+
+		canManage, err := canManageAdmin(currentAdminID, req.ID)
+		if err != nil {
+			return errno.New(errno.InternalError)
+		}
+		if !canManage {
+			return errno.New(errno.PermissionDenied)
+		}
+
+		admin, err := mysql.GetAdminByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.AdminNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Username != "" && req.Username != admin.Username {
+			existingAdmin, _ := mysql.GetAdminByUsername(req.Username)
+			if existingAdmin.ID != 0 && existingAdmin.ID != admin.ID {
+				return errno.New(errno.UsernameExists)
+			}
+			admin.Username = req.Username
+		}
+		if req.Realname != "" {
+			admin.Realname = req.Realname
+		}
+		if req.Phone != "" {
+			admin.Phone = req.Phone
+		}
+		if req.Email != "" {
+			admin.Email = &req.Email
+		} else {
+			admin.Email = nil
+		}
+		if req.RoleID != 0 {
+			targetRole, err := mysql.GetAdminRoleByID(req.RoleID)
+			if err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return errno.New(errno.RoleNotFound)
+				}
+				return errno.New(errno.InternalError)
+			}
+
+			currentLevel, err := getAdminRoleLevel(currentAdminID)
+			if err != nil {
+				return errno.New(errno.InternalError)
+			}
+
+			if currentLevel >= targetRole.Level {
+				return errno.New(errno.PermissionDenied)
+			}
+
+			admin.RoleID = req.RoleID
+		}
+		if req.Status >= 0 {
+			admin.Status = req.Status
+		}
+
+		if err := mysql.UpdateAdmin(admin); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
 
 	return nil
 }

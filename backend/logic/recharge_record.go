@@ -9,13 +9,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetRechargeRecordList(userID, status string) ([]model.RechargeRecord, error) {
+func GetRechargeRecordList(userID, status string, page, pageSize int) ([]model.RechargeRecord, int64, error) {
 	userIDInt := int64(0)
 	if userID != "" {
 		var err error
 		userIDInt, err = strconv.ParseInt(userID, 10, 64)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
@@ -24,15 +24,15 @@ func GetRechargeRecordList(userID, status string) ([]model.RechargeRecord, error
 		var err error
 		statusInt, err = strconv.Atoi(status)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
-	records, err := mysql.GetRechargeRecordList(userIDInt, statusInt)
+	records, total, err := mysql.GetRechargeRecordList(userIDInt, statusInt, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return records, nil
+	return records, total, nil
 }
 
 func GetRechargeRecordByID(id string) (*model.RechargeRecord, error) {
@@ -85,6 +85,43 @@ func DeleteRechargeRecord(id string) error {
 	}
 	if err := mysql.DeleteRechargeRecord(recordID); err != nil {
 		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeleteRechargeRecord(ids []string) error {
+	var idInts []int64
+	for _, id := range ids {
+		intID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		idInts = append(idInts, intID)
+	}
+	if err := mysql.BatchDeleteRechargeRecord(idInts); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateRechargeRecord(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		record, err := mysql.GetRechargeRecordByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.NotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		record.Status = req.Status
+
+		if err := mysql.UpdateRechargeRecordByID(req.ID, map[string]interface{}{"status": req.Status}); err != nil {
+			return errno.New(errno.InternalError)
+		}
 	}
 	return nil
 }

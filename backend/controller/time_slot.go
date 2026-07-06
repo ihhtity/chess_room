@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,12 +45,36 @@ type TimeSlotUpdateRequest struct {
 // @Router /time-slots [get]
 func GetTimeSlotList(c *gin.Context) {
 	typeID := c.Query("type_id")
-	slots, err := logic.GetTimeSlotList(typeID)
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	page := 1
+	pageSize := 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	slots, total, err := logic.GetTimeSlotList(typeID, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, slots)
+	response.Success(c, gin.H{
+		"data":  slots,
+		"total": total,
+	})
 }
 
 // @Summary 获取时间槽详情
@@ -185,4 +210,63 @@ func DeleteTimeSlot(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除时间槽
+// @Description 管理员批量删除时间槽
+// @Tags 时间槽
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "时间槽ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /time-slots/batch [delete]
+func BatchDeleteTimeSlot(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的时间槽")
+		return
+	}
+	if err := logic.BatchDeleteTimeSlot(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新时间槽
+// @Description 管理员批量更新时间槽状态
+// @Tags 时间槽
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "时间槽更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /time-slots/batch [put]
+func BatchUpdateTimeSlot(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateTimeSlot(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

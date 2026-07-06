@@ -9,13 +9,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetPaymentList(userID, paymentType, status string) ([]model.Payment, error) {
+func GetPaymentList(userID, paymentType, status string, page, pageSize int) ([]model.Payment, int64, error) {
 	userIDInt := int64(0)
 	if userID != "" {
 		var err error
 		userIDInt, err = strconv.ParseInt(userID, 10, 64)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
@@ -24,7 +24,7 @@ func GetPaymentList(userID, paymentType, status string) ([]model.Payment, error)
 		var err error
 		paymentTypeInt, err = strconv.Atoi(paymentType)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
@@ -33,15 +33,15 @@ func GetPaymentList(userID, paymentType, status string) ([]model.Payment, error)
 		var err error
 		statusInt, err = strconv.Atoi(status)
 		if err != nil {
-			return nil, errno.New(errno.BadRequest)
+			return nil, 0, errno.New(errno.BadRequest)
 		}
 	}
 
-	payments, err := mysql.GetPaymentList(userIDInt, paymentTypeInt, statusInt)
+	payments, total, err := mysql.GetPaymentList(userIDInt, paymentTypeInt, statusInt, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return payments, nil
+	return payments, total, nil
 }
 
 func GetPaymentByID(id string) (*model.Payment, error) {
@@ -85,7 +85,47 @@ func DeletePayment(id string) error {
 	if err != nil {
 		return errno.New(errno.BadRequest)
 	}
-	return mysql.DB.Delete(&model.Payment{}, paymentID).Error
+	if err := mysql.DeletePayment(paymentID); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeletePayment(ids []string) error {
+	var paymentIDs []int64
+	for _, id := range ids {
+		paymentID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		paymentIDs = append(paymentIDs, paymentID)
+	}
+	if err := mysql.BatchDeletePayment(paymentIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdatePayment(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		payment, err := mysql.GetPaymentByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.NotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		payment.Status = req.Status
+
+		if err := mysql.DB.Model(payment).Update("status", req.Status).Error; err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+	return nil
 }
 
 func CreatePayment(orderID, userID int64, amount float64, paymentType int) (*model.Payment, error) {

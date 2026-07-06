@@ -46,6 +46,8 @@ func GetActivityList(c *gin.Context) {
 	adminID := c.GetInt64("admin_id")
 	name := c.Query("name")
 	statusStr := c.Query("status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	status := -1
 	var err error
@@ -57,17 +59,40 @@ func GetActivityList(c *gin.Context) {
 		}
 	}
 
-	var activities []model.Activity
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
 	if adminID != 0 {
-		activities, err = logic.GetActivityListAdminFiltered(name, status)
+		activities, total, err := logic.GetActivityListAdminFiltered(name, status, page, pageSize)
+		if err != nil {
+			response.HandleError(c, err)
+			return
+		}
+		response.Success(c, gin.H{
+			"data":  activities,
+			"total": total,
+		})
 	} else {
-		activities, err = logic.GetActivityList()
+		activities, err := logic.GetActivityList()
+		if err != nil {
+			response.HandleError(c, err)
+			return
+		}
+		response.Success(c, activities)
 	}
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-	response.Success(c, activities)
 }
 
 // @Summary 获取活动详情
@@ -231,4 +256,63 @@ func DeleteActivity(c *gin.Context) {
 		return
 	}
 	response.SuccessWithMsg(c, "删除成功", nil)
+}
+
+// @Summary 批量删除活动
+// @Description 管理员批量删除活动
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "活动ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /activities/batch [delete]
+func BatchDeleteActivity(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的活动")
+		return
+	}
+	if err := logic.BatchDeleteActivity(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新活动
+// @Description 管理员批量更新活动状态
+// @Tags 活动
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "活动更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /activities/batch [put]
+func BatchUpdateActivity(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateActivity(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

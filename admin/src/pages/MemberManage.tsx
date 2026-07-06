@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, InputNumber, Select, DatePicker, message, Tag, Space } from 'antd'
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, InputNumber, Select, DatePicker, message, Tag, Checkbox } from 'antd'
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { membershipApi, userApi } from '@/api'
 import { Membership, User } from '@/types'
 import { getUserAvatar } from '@/utils/image'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
+import { formatDateTime } from '@/utils'
 
 export default function MemberManage() {
   const [data, setData] = useState<Membership[]>([])
@@ -13,6 +18,13 @@ export default function MemberManage() {
   const [open, setOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedMembers, setSelectedMembers] = useState<Membership[]>([])
   const [form] = Form.useForm()
   const [addForm] = Form.useForm()
 
@@ -21,10 +33,16 @@ export default function MemberManage() {
     fetchUsers()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await membershipApi.getList(params)
-      setData(result)
+      const result = await membershipApi.getList({ ...params, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch members:', error)
     }
@@ -33,7 +51,12 @@ export default function MemberManage() {
   const fetchUsers = async () => {
     try {
       const result = await userApi.getList()
-      setUsers(result)
+      if (Array.isArray(result)) {
+        setUsers(result)
+      } else if (result.data) {
+        setUsers(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch users:', error)
     }
@@ -83,6 +106,39 @@ export default function MemberManage() {
     }
   }
 
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await membershipApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(m => ids.includes(String(m.id)))
+    setSelectedMembers(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      const items = updatedRecords.map(record => ({
+        ...record,
+        expired_at: record.expired_at ? record.expired_at.format('YYYY-MM-DD HH:mm:ss') : undefined
+      }))
+      await membershipApi.batchUpdate(items)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
   const handleAdd = () => {
     addForm.resetFields()
     setAddOpen(true)
@@ -121,6 +177,23 @@ export default function MemberManage() {
   }
 
   const columns = [
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: Membership) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '头像', dataIndex: 'user', key: 'user', width: 80, render: (user: any) => (
       <img 
@@ -137,7 +210,7 @@ export default function MemberManage() {
     { title: '累计消费', dataIndex: 'total_consumed', key: 'total_consumed', render: (v: number) => `¥${v.toFixed(2)}` },
     { title: '累计储值', dataIndex: 'total_recharged', key: 'total_recharged', render: (v: number) => <span style={{ color: '#1890ff' }}>¥{v.toFixed(2)}</span> },
     { title: '状态', dataIndex: 'membership_status', key: 'membership_status', render: (s: number) => getStatusTag(s) },
-    { title: '加入时间', dataIndex: 'joined_at', key: 'joined_at' },
+    { title: '加入时间', dataIndex: 'joined_at', key: 'joined_at', render: (t: string) => formatDateTime(t) },
     { title: '操作', key: 'action', render: (_: any, record: Membership) => (
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
@@ -152,9 +225,8 @@ export default function MemberManage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>会员管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'user_id', label: '用户', type: 'select', options: users.map(u => ({ label: u.nickname || u.realname, value: String(u.id) })) },
@@ -171,10 +243,39 @@ export default function MemberManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>会员管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="会员管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加会员</Button>
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title="编辑会员"
@@ -270,6 +371,20 @@ export default function MemberManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedMembers}
+        fields={[
+          { key: 'level', label: '会员等级', type: 'select', options: [{ label: '普通会员', value: 0 }, { label: '白银会员', value: 1 }, { label: '黄金会员', value: 2 }, { label: '钻石会员', value: 3 }] },
+          { key: 'balance', label: '余额', type: 'number' },
+          { key: 'points', label: '积分', type: 'number' },
+          { key: 'membership_status', label: '状态', type: 'select', options: [{ label: '正常', value: 1 }, { label: '禁用', value: 0 }] },
+          { key: 'expired_at', label: '过期时间', type: 'date' }
+        ]}
+        title="批量编辑会员"
+      />
     </div>
   )
 }

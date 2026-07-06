@@ -5,17 +5,18 @@ import (
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/errno"
 	"chess-room-backend/pkg/utils"
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/gorm"
 )
 
-func GetOrderList(userID int64, roomID, status int, startTime, endTime time.Time) ([]model.Order, error) {
-	orders, err := mysql.GetOrderList(int(userID), roomID, status, startTime, endTime)
+func GetOrderList(userID int64, roomID, status int, orderNo string, startTime, endTime time.Time, page, pageSize int) ([]model.Order, int64, error) {
+	orders, total, err := mysql.GetOrderList(int(userID), roomID, status, orderNo, startTime, endTime, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return orders, nil
+	return orders, total, nil
 }
 
 func GetOrderByID(id int64) (*model.Order, error) {
@@ -42,7 +43,7 @@ func CreateOrder(userID, roomID int64, startTime, endTime time.Time, remark stri
 		return nil, errno.New(errno.RoomDisabled)
 	}
 
-	orders, err := mysql.GetOrderList(0, int(roomID), 0, startTime, endTime)
+	orders, _, err := mysql.GetOrderList(0, int(roomID), 0, "", startTime, endTime, 0, 0)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, errno.New(errno.InternalError)
 	}
@@ -152,6 +153,44 @@ func DeleteOrder(orderID int64) error {
 	if err := mysql.DeleteOrder(orderID); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	return nil
+}
+
+func BatchDeleteOrder(ids []string) error {
+	var orderIDs []int64
+	for _, id := range ids {
+		orderID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		orderIDs = append(orderIDs, orderID)
+	}
+	if err := mysql.BatchDeleteOrder(orderIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateOrder(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		order, err := mysql.GetOrderByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.OrderNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		order.Status = req.Status
+
+		if err := mysql.UpdateOrder(order); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
 	return nil
 }
 

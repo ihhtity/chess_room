@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, message, Tag, Rate, Space } from 'antd'
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, Select, message, Tag, Rate, Checkbox } from 'antd'
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import { reviewApi, roomApi, userApi, orderApi } from '@/api'
 import { Review, Room, User, Order } from '@/types'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
+import { formatDateTime } from '@/utils'
 
 export default function ReviewManage() {
   const [data, setData] = useState<Review[]>([])
@@ -13,6 +18,14 @@ export default function ReviewManage() {
   const [open, setOpen] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [searchParams, setSearchParams] = useState<Record<string, string>>({})
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedReviews, setSelectedReviews] = useState<Review[]>([])
   const [form] = Form.useForm()
   const [addForm] = Form.useForm()
 
@@ -23,10 +36,17 @@ export default function ReviewManage() {
     fetchOrders()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await reviewApi.getList(params)
-      setData(result)
+      const mergedParams = { ...searchParams, ...params }
+      const result = await reviewApi.getList({ ...mergedParams, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch reviews:', error)
     }
@@ -35,7 +55,11 @@ export default function ReviewManage() {
   const fetchRooms = async () => {
     try {
       const result = await roomApi.getList()
-      setRooms(result)
+      if (Array.isArray(result)) {
+        setRooms(result)
+      } else if (result.data) {
+        setRooms(result.data)
+      }
     } catch (error) {
       console.error('Failed to fetch rooms:', error)
     }
@@ -44,7 +68,11 @@ export default function ReviewManage() {
   const fetchUsers = async () => {
     try {
       const result = await userApi.getList()
-      setUsers(result)
+      if (Array.isArray(result)) {
+        setUsers(result)
+      } else if (result.data) {
+        setUsers(result.data)
+      }
     } catch (error) {
       console.error('Failed to fetch users:', error)
     }
@@ -53,7 +81,11 @@ export default function ReviewManage() {
   const fetchOrders = async () => {
     try {
       const result = await orderApi.getList()
-      setOrders(result)
+      if (Array.isArray(result)) {
+        setOrders(result)
+      } else if (result.data) {
+        setOrders(result.data)
+      }
     } catch (error) {
       console.error('Failed to fetch orders:', error)
     }
@@ -76,6 +108,35 @@ export default function ReviewManage() {
       fetchData()
     } catch (error) {
       console.error('Failed to delete:', error)
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await reviewApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(r => ids.includes(String(r.id)))
+    setSelectedReviews(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await reviewApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
     }
   }
 
@@ -124,15 +185,32 @@ export default function ReviewManage() {
   }
 
   const columns = [
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: Review) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-    { title: '订单ID', dataIndex: 'order_id', key: 'order_id' },
-    { title: '用户ID', dataIndex: 'user_id', key: 'user_id' },
+    { title: '订单ID', dataIndex: 'order_id', key: 'order_id', width: 60 },
+    { title: '用户ID', dataIndex: 'user_id', key: 'user_id', width: 60 },
     { title: '用户名', dataIndex: 'user', key: 'user', render: (user: any) => user?.nickname || user?.realname || '-' },
     { title: '房间', dataIndex: 'room_id', key: 'room_id', render: (v: number) => getRoomName(v) },
     { title: '评分', dataIndex: 'rating', key: 'rating', render: (v: number) => <Rate disabled defaultValue={v} /> },
     { title: '评价内容', dataIndex: 'content', key: 'content', ellipsis: true },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusTag(s) },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: (t: string) => formatDateTime(t) },
     { title: '操作', key: 'action', render: (_: any, record: Review) => (
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
@@ -142,14 +220,21 @@ export default function ReviewManage() {
   ]
 
   const handleSearch = (values: Record<string, string>) => {
-    fetchData(values)
+    const params: Record<string, string> = {}
+    Object.keys(values).forEach(key => {
+      if (values[key]) {
+        params[key] = values[key]
+      }
+    })
+    setSearchParams(params)
+    setCurrentPage(1)
+    fetchData(params, 1)
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>评价管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'user_id', label: '用户', type: 'select', options: users.map(u => ({ label: u.nickname || u.realname, value: String(u.id) })) },
@@ -161,17 +246,46 @@ export default function ReviewManage() {
                 { label: '4星', value: '4' },
                 { label: '5星', value: '5' }
               ]},
-              { key: 'review_status', label: '状态', type: 'select', options: [
+              { key: 'status', label: '状态', type: 'select', options: [
                 { label: '显示', value: '1' },
                 { label: '隐藏', value: '0' }
               ]}
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>评价管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="评价管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加评价</Button>
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title="编辑评价"
@@ -250,6 +364,18 @@ export default function ReviewManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedReviews}
+        fields={[
+          { key: 'rating', label: '评分', type: 'number', min: 1, max: 5 },
+          { key: 'content', label: '评价内容', type: 'textarea' },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '显示', value: 1 }, { label: '隐藏', value: 0 }] }
+        ]}
+        title="批量编辑评价"
+      />
     </div>
   )
 }

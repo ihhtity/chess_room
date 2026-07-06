@@ -33,12 +33,46 @@ type AdminRoleUpdateRequest struct {
 // @Failure 401 {object} response.Response
 // @Router /admin/roles [get]
 func GetAdminRoleList(c *gin.Context) {
-	roles, err := logic.GetAdminRoleList()
+	name := c.Query("name")
+	statusStr := c.Query("status")
+	status := -1
+	if statusStr != "" {
+		var err error
+		status, err = strconv.Atoi(statusStr)
+		if err != nil {
+			status = -1
+		}
+	}
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	var page int = 1
+	var pageSize int = 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 0 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 0 {
+			pageSize = 10
+		}
+	}
+
+	roles, total, err := logic.GetAdminRoleList(name, status, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, roles)
+	response.Success(c, gin.H{
+		"data":  roles,
+		"total": total,
+	})
 }
 
 // @Summary 获取角色详情
@@ -187,6 +221,35 @@ func DeleteAdminRole(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "删除成功", nil)
+}
+
+func BatchUpdateAdminRole(c *gin.Context) {
+	var reqs []struct {
+		ID          int64  `json:"id"`
+		Name        string `json:"name"`
+		Level       int    `json:"level"`
+		Description string `json:"description"`
+		Status      int    `json:"status"`
+	}
+
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if len(reqs) == 0 {
+		response.Fail(c, 400, "请选择要更新的角色")
+		return
+	}
+
+	currentRoleID := c.GetInt64("role_id")
+
+	if err := logic.BatchUpdateAdminRole(currentRoleID, reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
 
 // @Summary 获取当前管理员可管理的角色列表

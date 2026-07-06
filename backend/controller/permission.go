@@ -41,12 +41,38 @@ type AssignPermissionRequest struct {
 // @Failure 401 {object} response.Response
 // @Router /admin/permissions [get]
 func GetPermissionList(c *gin.Context) {
-	permissions, err := logic.GetPermissionList()
+	name := c.Query("name")
+	group := c.Query("group")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	var page int = 1
+	var pageSize int = 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 0 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 0 {
+			pageSize = 10
+		}
+	}
+
+	permissions, total, err := logic.GetPermissionList(name, group, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, permissions)
+	response.Success(c, gin.H{
+		"data":  permissions,
+		"total": total,
+	})
 }
 
 // @Summary 获取权限列表（按分组）
@@ -209,6 +235,34 @@ func DeletePermission(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "删除成功", nil)
+}
+
+func BatchUpdatePermission(c *gin.Context) {
+	var reqs []struct {
+		ID          int64  `json:"id"`
+		Name        string `json:"name"`
+		Group       string `json:"group"`
+		Module      string `json:"module"`
+		Description string `json:"description"`
+		SortOrder   int    `json:"sort_order"`
+	}
+
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if len(reqs) == 0 {
+		response.Fail(c, 400, "请选择要更新的权限")
+		return
+	}
+
+	if err := logic.BatchUpdatePermission(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
 
 // @Summary 获取角色权限

@@ -29,12 +29,30 @@ func GetPermissionByCode(code string) (*model.Permission, error) {
 	return &permission, nil
 }
 
-func GetPermissionList() ([]model.Permission, error) {
+func GetPermissionListFiltered(name, group string, page, pageSize int) ([]model.Permission, int64, error) {
 	var permissions []model.Permission
-	if err := DB.Order("sort_order ASC").Find(&permissions).Error; err != nil {
-		return nil, errors.New("获取权限列表失败")
+	var total int64
+	query := DB.Model(&model.Permission{}).Order("sort_order ASC")
+
+	if name != "" {
+		query = query.Where("name LIKE ?", "%"+name+"%")
 	}
-	return permissions, nil
+	if group != "" {
+		query = query.Where("`group` LIKE ?", "%"+group+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, errors.New("获取权限列表失败")
+	}
+
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+
+	if err := query.Find(&permissions).Error; err != nil {
+		return nil, 0, errors.New("获取权限列表失败")
+	}
+	return permissions, total, nil
 }
 
 func GetPermissionListByGroup() ([]model.Permission, error) {

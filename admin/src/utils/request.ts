@@ -2,15 +2,6 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios'
 import { message } from 'antd'
 import { ApiResponse } from '@/types'
 
-declare module 'axios' {
-  interface InternalAxiosRequestConfig {
-    __retryCount?: number
-  }
-}
-
-const MAX_RETRIES = 3
-const RETRY_DELAY = 1000
-
 const request = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -37,27 +28,6 @@ request.interceptors.request.use(
   }
 )
 
-const shouldRetry = (error: AxiosError): boolean => {
-  if (error.response) {
-    const status = error.response.status
-    return status >= 500 || status === 408
-  }
-  return !error.config?.cancelToken && !error.message.includes('cancel')
-}
-
-const retryRequest = async (config: AxiosRequestConfig, retryCount: number): Promise<any> => {
-  try {
-    const response = await axios.request(config)
-    return response
-  } catch (error) {
-    if (retryCount < MAX_RETRIES && shouldRetry(error as AxiosError)) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, retryCount)))
-      return retryRequest(config, retryCount + 1)
-    }
-    throw error
-  }
-}
-
 request.interceptors.response.use(
   (response) => {
     const res = response.data as ApiResponse
@@ -73,27 +43,7 @@ request.interceptors.response.use(
     }
     return res.data
   },
-  async (error: AxiosError) => {
-    const config = error.config
-    if (config && shouldRetry(error)) {
-      const retryCount = config.__retryCount || 0
-      if (retryCount < MAX_RETRIES) {
-        config.__retryCount = retryCount + 1
-        try {
-          const response = await retryRequest(config, retryCount)
-          const res = response.data as ApiResponse
-          if (res.code !== 200) {
-            message.error(res.message || '请求失败')
-            return Promise.reject(res)
-          }
-          return res.data
-        } catch (retryError) {
-          message.error('网络异常，请稍后重试')
-          return Promise.reject(retryError)
-        }
-      }
-    }
-
+  (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status
       switch (status) {

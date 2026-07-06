@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/dao/mysql"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/errno"
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -103,12 +104,12 @@ func Consume(userID int64, amount float64) (*model.Membership, error) {
 	return membership, nil
 }
 
-func GetMembershipList(level, status int) ([]model.Membership, error) {
-	memberships, err := mysql.GetMembershipList(level, status)
+func GetMembershipList(userID int64, level, status, page, pageSize int) ([]model.Membership, int64, error) {
+	memberships, total, err := mysql.GetMembershipList(userID, level, status, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return memberships, nil
+	return memberships, total, nil
 }
 
 func GetMembershipByID(id int64) (*model.Membership, error) {
@@ -161,6 +162,58 @@ func DeleteMembership(id int64) error {
 	return nil
 }
 
+func BatchDeleteMembership(ids []string) error {
+	var membershipIDs []int64
+	for _, id := range ids {
+		membershipID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		membershipIDs = append(membershipIDs, membershipID)
+	}
+	if err := mysql.BatchDeleteMembership(membershipIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateMembership(reqs []struct {
+	ID               int64   `json:"id"`
+	Level            int     `json:"level"`
+	Balance          float64 `json:"balance"`
+	Points           int     `json:"points"`
+	MembershipStatus int     `json:"membership_status"`
+}) error {
+	for _, req := range reqs {
+		membership, err := mysql.GetMembershipByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.MembershipNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Level != 0 {
+			membership.Level = req.Level
+		}
+		if req.Balance != 0 {
+			membership.Balance = req.Balance
+		}
+		if req.Points != 0 {
+			membership.Points = req.Points
+		}
+		if req.MembershipStatus != 0 {
+			membership.MembershipStatus = req.MembershipStatus
+		}
+
+		if err := mysql.UpdateMembership(membership); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
+	return nil
+}
+
 func CreateMembership(membership *model.Membership) error {
 	_, err := mysql.GetMembershipByUserID(membership.UserID)
 	if err == nil {
@@ -177,7 +230,7 @@ func CreateMembership(membership *model.Membership) error {
 }
 
 func GetRechargeRecords(userID int64) ([]model.RechargeRecord, error) {
-	records, err := mysql.GetRechargeRecordList(userID, -1)
+	records, _, err := mysql.GetRechargeRecordList(userID, -1, 0, 0)
 	if err != nil {
 		return nil, errno.New(errno.InternalError)
 	}

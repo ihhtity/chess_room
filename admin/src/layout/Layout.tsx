@@ -19,7 +19,9 @@ import {
   NotificationOutlined,
   AuditOutlined,
   LockOutlined,
-  TeamOutlined
+  TeamOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons'
 import { usePermission } from '@/context/PermissionContext'
 import './Layout.scss'
@@ -32,6 +34,7 @@ const menuItems = [
   { key: '/room', icon: <HomeOutlined />, label: '包间管理', permission: 'room_view' },
   { key: '/order', icon: <ShoppingCartOutlined />, label: '订单管理', permission: 'order_view' },
   { key: '/member', icon: <UserOutlined />, label: '会员管理', permission: 'member_view' },
+  { key: '/user', icon: <TeamOutlined />, label: '用户管理', permission: 'member_view' },
   { key: '/activity', icon: <CalendarOutlined />, label: '活动管理', permission: 'activity_view' },
   { key: '/announcement', icon: <BellOutlined />, label: '公告管理', permission: 'announcement_view' },
   { key: '/recharge-package', icon: <CreditCardOutlined />, label: '充值套餐', permission: 'member_view' },
@@ -45,7 +48,7 @@ const menuItems = [
   { key: '/role', icon: <TeamOutlined />, label: '角色管理', permission: 'role_view' },
   { key: '/permission', icon: <LockOutlined />, label: '权限管理', permission: 'permission_view' },
   { key: '/admin-manage', icon: <UserOutlined />, label: '管理者管理', permission: 'admin_view' },
-  { key: '/profile', icon: <SettingOutlined />, label: '个人资料' }
+  { key: '/profile', icon: <SettingOutlined />, label: '个人资料' },
 ]
 
 export default function Layout() {
@@ -73,42 +76,42 @@ export default function Layout() {
 
   return (
     <AntLayout className="admin-layout">
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-        className="sider"
-      >
-        <div className="logo">
-          <span>棋牌室管理</span>
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[window.location.pathname]}
-          items={filteredMenuItems}
-          onClick={handleMenuClick}
-        />
-      </Sider>
-      <AntLayout>
-        <Header className="header">
-          <div className="header-left">
-            <Button
-              type="text"
-              icon={collapsed ? <DashboardOutlined /> : <DashboardOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-            />
+        <Sider
+          collapsed={collapsed}
+          onCollapse={(value) => setCollapsed(value)}
+          className="sider"
+          style={{ width: collapsed ? 80 : 150 }}
+        >
+          <div className="logo">
+            <span>棋牌室管理</span>
           </div>
-          <div className="header-right">
-            <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
-              退出登录
-            </Button>
-          </div>
-        </Header>
-        <Content className="content">
-          <Outlet />
-        </Content>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[window.location.pathname]}
+            items={filteredMenuItems}
+            onClick={handleMenuClick}
+          />
+        </Sider>
+        <AntLayout className="admin-layout-main" style={{ marginLeft: collapsed ? 80 : 200 }}>
+          <Header className="header">
+            <div className="header-left">
+              <Button
+                type="text"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setCollapsed(!collapsed)}
+              />
+            </div>
+            <div className="header-right">
+              <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+                退出登录
+              </Button>
+            </div>
+          </Header>
+          <Content className="content">
+            <Outlet />
+          </Content>
+        </AntLayout>
       </AntLayout>
-    </AntLayout>
   )
 }

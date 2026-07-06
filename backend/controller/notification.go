@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,12 +32,36 @@ func GetNotificationList(c *gin.Context) {
 	userID := c.Query("user_id")
 	notificationType := c.Query("type")
 	readStatus := c.Query("read_status")
-	notifications, err := logic.GetNotificationList(userID, notificationType, readStatus)
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	page := 1
+	pageSize := 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	notifications, total, err := logic.GetNotificationList(userID, notificationType, readStatus, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, notifications)
+	response.Success(c, gin.H{
+		"data":  notifications,
+		"total": total,
+	})
 }
 
 // @Summary 获取通知详情
@@ -140,6 +165,60 @@ func DeleteNotification(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除通知
+// @Description 批量删除通知
+// @Tags 通知管理
+// @Accept json
+// @Produce json
+// @Param body body struct{ IDs []string `json:"ids"` } true "通知ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Router /notifications/batch [delete]
+func BatchDeleteNotification(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if err := logic.BatchDeleteNotification(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新通知
+// @Description 管理员批量更新通知读取状态
+// @Tags 通知管理
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,read_status=int} true "通知更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /notifications/batch [put]
+func BatchUpdateNotification(c *gin.Context) {
+	var reqs []struct {
+		ID         int64 `json:"id"`
+		ReadStatus int   `json:"read_status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateNotification(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
 
 // @Summary 标记全部已读

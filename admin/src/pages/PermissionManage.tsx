@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Space, message, InputNumber, Checkbox } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { permissionApi } from '@/api'
 import { Permission } from '@/types'
 import { usePermission } from '@/context/PermissionContext'
 import SearchBar from '@/components/SearchBar'
 import BatchActions from '@/components/BatchActions'
+import BatchEditModal from '@/components/BatchEditModal'
+import ExportDropdown from '@/components/ExportDropdown'
+import CustomPagination from '@/components/CustomPagination'
 
 export default function PermissionManage() {
   const [permissions, setPermissions] = useState<Permission[]>([])
@@ -13,15 +16,29 @@ export default function PermissionManage() {
   const [form] = Form.useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [searchParams, setSearchParams] = useState<Record<string, string>>({})
   const [currentPermission, setCurrentPermission] = useState<Permission | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedRecords, setSelectedRecords] = useState<Permission[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
   const { hasPermission } = usePermission()
 
-  const fetchPermissions = async () => {
+  const fetchPermissions = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     setLoading(true)
     try {
-      const data = await permissionApi.getList()
-      setPermissions(data)
+      const mergedParams = { ...searchParams, ...params }
+      const result = await permissionApi.getList({ ...mergedParams, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setPermissions(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setPermissions(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       message.error('获取权限列表失败')
     } finally {
@@ -83,6 +100,24 @@ export default function PermissionManage() {
     }
   }
 
+  const handleBatchEdit = () => {
+    const records = permissions.filter(p => selectedRowKeys.includes(String(p.id)))
+    setSelectedRecords(records)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await permissionApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchPermissions()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
@@ -104,7 +139,9 @@ export default function PermissionManage() {
     const params: Record<string, string> = {}
     if (values.name) params.name = values.name
     if (values.group) params.group = values.group
-    fetchPermissions()
+    setSearchParams(params)
+    setCurrentPage(1)
+    fetchPermissions(params, 1)
   }
 
   const columns = [
@@ -147,9 +184,8 @@ export default function PermissionManage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>权限管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'name', label: '权限名称', type: 'input', placeholder: '请输入权限名称' },
@@ -157,14 +193,24 @@ export default function PermissionManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>权限管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={permissions} filename="权限列表" />
           <BatchActions
             selectedRowKeys={selectedRowKeys}
             onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
           />
           {hasPermission('permission_view') && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加权限</Button>
           )}
-        </Space>
+        </div>
       </div>
 
       <Table
@@ -172,7 +218,17 @@ export default function PermissionManage() {
         columns={columns}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchPermissions(undefined, page, size)
+        }}
       />
 
       <Modal
@@ -203,6 +259,20 @@ export default function PermissionManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedRecords}
+        fields={[
+          { key: 'name', label: '权限名称', type: 'input', placeholder: '请输入权限名称' },
+          { key: 'group', label: '分组', type: 'input', placeholder: '请输入分组' },
+          { key: 'module', label: '模块', type: 'input', placeholder: '请输入模块' },
+          { key: 'description', label: '描述', type: 'textarea', placeholder: '请输入描述' },
+          { key: 'sort_order', label: '排序', type: 'number', min: 0 }
+        ]}
+        title="批量编辑权限"
+      />
     </div>
   )
 }

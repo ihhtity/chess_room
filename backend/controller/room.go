@@ -44,9 +44,11 @@ func GetRoomList(c *gin.Context) {
 	floor := c.Query("floor")
 	status := c.Query("status")
 	name := c.Query("name")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	typeIDInt := 0
-	statusInt := 0
+	statusInt := -1
 	var err error
 
 	if typeID != "" {
@@ -65,13 +67,32 @@ func GetRoomList(c *gin.Context) {
 		}
 	}
 
-	rooms, err := logic.GetRoomListFiltered(typeIDInt, floor, statusInt, name)
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 0 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 0 {
+			pageSize = 10
+		}
+	}
+
+	rooms, total, err := logic.GetRoomListFiltered(typeIDInt, floor, statusInt, name, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, rooms)
+	response.Success(c, gin.H{
+		"data":  rooms,
+		"total": total,
+	})
 }
 
 // @Summary 获取房间详情
@@ -204,6 +225,70 @@ func DeleteRoom(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+// @Summary 批量删除房间
+// @Description 管理员批量删除房间
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "房间ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /rooms/batch [delete]
+func BatchDeleteRoom(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的房间")
+		return
+	}
+	if err := logic.BatchDeleteRoom(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新房间
+// @Description 管理员批量更新房间信息
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,name=string,type_id=int64,floor=string,capacity=int,images=string,status=int} true "房间更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /room/batch [put]
+func BatchUpdateRoom(c *gin.Context) {
+	var reqs []struct {
+		ID       int64  `json:"id"`
+		Name     string `json:"name"`
+		TypeID   int64  `json:"type_id"`
+		Floor    string `json:"floor"`
+		Capacity int    `json:"capacity"`
+		Images   string `json:"images"`
+		Status   int    `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateRoom(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
+}
+
 // @Summary 获取房间类型列表
 // @Description 获取房间类型列表
 // @Tags 房间类型
@@ -213,12 +298,36 @@ func DeleteRoom(c *gin.Context) {
 // @Failure 400 {object} response.Response
 // @Router /room-types [get]
 func GetRoomTypeList(c *gin.Context) {
-	types, err := logic.GetRoomTypeList()
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	page := 1
+	pageSize := 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	types, total, err := logic.GetRoomTypeList(page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, types)
+	response.Success(c, gin.H{
+		"data":  types,
+		"total": total,
+	})
 }
 
 // @Summary 获取房间类型详情
@@ -351,6 +460,68 @@ func DeleteRoomType(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除房间类型
+// @Description 管理员批量删除房间类型
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "房间类型ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /room-types/batch [delete]
+func BatchDeleteRoomType(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的房间类型")
+		return
+	}
+	if err := logic.BatchDeleteRoomType(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新房间类型
+// @Description 管理员批量更新房间类型信息
+// @Tags 房间类型
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,name=string,description=string,base_price=float64,max_people=int} true "房间类型更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /room-types/batch [put]
+func BatchUpdateRoomType(c *gin.Context) {
+	var reqs []struct {
+		ID          int64   `json:"id"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		BasePrice   float64 `json:"base_price"`
+		MaxPeople   int     `json:"max_people"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateRoomType(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
 
 // @Summary 健康检查

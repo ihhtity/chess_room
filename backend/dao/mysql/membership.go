@@ -16,17 +16,37 @@ func GetMembershipByID(id int64) (*model.Membership, error) {
 	return &membership, err
 }
 
-func GetMembershipList(level, status int) ([]model.Membership, error) {
+func GetMembershipList(userID int64, level, status, page, pageSize int) ([]model.Membership, int64, error) {
 	var memberships []model.Membership
-	db := DB.Preload("User")
+	var total int64
+	db := DB.Model(&model.Membership{})
+	if userID != 0 {
+		db = db.Where("user_id = ?", userID)
+	}
 	if level != 0 {
 		db = db.Where("level = ?", level)
 	}
-	if status != 0 {
+	if status >= 0 {
 		db = db.Where("membership_status = ?", status)
 	}
-	err := db.Order("created_at DESC").Find(&memberships).Error
-	return memberships, err
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		db = DB.Preload("User")
+		if userID != 0 {
+			db = db.Where("user_id = ?", userID)
+		}
+		if level != 0 {
+			db = db.Where("level = ?", level)
+		}
+		if status >= 0 {
+			db = db.Where("membership_status = ?", status)
+		}
+		db = db.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	err := db.Find(&memberships).Error
+	return memberships, total, err
 }
 
 func CreateMembership(membership *model.Membership) error {
@@ -39,4 +59,8 @@ func UpdateMembership(membership *model.Membership) error {
 
 func DeleteMembership(id int64) error {
 	return DB.Delete(&model.Membership{}, id).Error
+}
+
+func BatchDeleteMembership(ids []int64) error {
+	return DB.Where("id IN (?)", ids).Delete(&model.Membership{}).Error
 }

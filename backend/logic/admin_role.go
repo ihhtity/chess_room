@@ -8,12 +8,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetAdminRoleList() ([]model.AdminRole, error) {
-	roles, err := mysql.GetAdminRoleList()
+func GetAdminRoleList(name string, status int, page, pageSize int) ([]model.AdminRole, int64, error) {
+	roles, total, err := mysql.GetAdminRoleListFiltered(name, status, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return roles, nil
+	return roles, total, nil
 }
 
 func GetAdminRoleByID(id int64) (*model.AdminRole, error) {
@@ -105,4 +105,53 @@ func GetRolesByLevel(level int) ([]model.AdminRole, error) {
 		return nil, errno.New(errno.InternalError)
 	}
 	return roles, nil
+}
+
+func BatchUpdateAdminRole(currentAdminRoleID int64, reqs []struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Level       int    `json:"level"`
+	Description string `json:"description"`
+	Status      int    `json:"status"`
+}) error {
+	for _, req := range reqs {
+		targetRole, err := mysql.GetAdminRoleByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.NotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		currentRole, err := mysql.GetAdminRoleByID(currentAdminRoleID)
+		if err != nil {
+			return errno.New(errno.InternalError)
+		}
+
+		if targetRole.Level <= currentRole.Level {
+			return errno.NewWithMessage(errno.Forbidden, "只能修改层级低于自己的角色")
+		}
+
+		if req.Name != "" {
+			targetRole.Name = req.Name
+		}
+		if req.Level != 0 && req.Level <= currentRole.Level {
+			return errno.NewWithMessage(errno.Forbidden, "只能将角色层级设置为低于自己的层级")
+		}
+		if req.Level != 0 {
+			targetRole.Level = req.Level
+		}
+		if req.Description != "" {
+			targetRole.Description = req.Description
+		}
+		if req.Status >= 0 {
+			targetRole.Status = req.Status
+		}
+
+		if err := mysql.UpdateAdminRole(req.ID, targetRole); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
+	return nil
 }

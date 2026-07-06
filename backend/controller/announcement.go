@@ -37,6 +37,8 @@ func GetAnnouncementList(c *gin.Context) {
 	title := c.Query("title")
 	typeStr := c.Query("type")
 	statusStr := c.Query("status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	typeInt := -1
 	statusInt := -1
@@ -58,12 +60,31 @@ func GetAnnouncementList(c *gin.Context) {
 		}
 	}
 
-	announcements, err := logic.GetAnnouncementListFiltered(title, typeInt, statusInt)
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	announcements, total, err := logic.GetAnnouncementListFiltered(title, typeInt, statusInt, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, announcements)
+	response.Success(c, gin.H{
+		"data":  announcements,
+		"total": total,
+	})
 }
 
 // @Summary 获取公告详情
@@ -186,4 +207,63 @@ func DeleteAnnouncement(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除公告
+// @Description 管理员批量删除公告
+// @Tags 公告
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "公告ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /announcements/batch [delete]
+func BatchDeleteAnnouncement(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的公告")
+		return
+	}
+	if err := logic.BatchDeleteAnnouncement(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新公告
+// @Description 管理员批量更新公告状态
+// @Tags 公告
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "公告更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /announcements/batch [put]
+func BatchUpdateAnnouncement(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateAnnouncement(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

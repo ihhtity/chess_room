@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Input, Select, Button, Row, Col, Space } from 'antd'
-import { SearchOutlined, FilterOutlined } from '@ant-design/icons'
+import { FilterOutlined } from '@ant-design/icons'
 
 interface SearchField {
   key: string
@@ -17,7 +17,6 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ fields, onSearch, initialValues }: SearchBarProps) {
-  const [visible, setVisible] = useState(false)
   const [values, setValues] = useState<Record<string, string>>(initialValues || {})
 
   const handleSearch = () => {
@@ -40,48 +39,40 @@ export default function SearchBar({ fields, onSearch, initialValues }: SearchBar
   }
 
   return (
-    <div>
-      <Button type="text" icon={<SearchOutlined />} onClick={() => setVisible(!visible)}>
-        {visible ? '收起搜索' : '搜索'}
-      </Button>
-      
-      {visible && (
-        <div style={{ marginTop: 12, padding: 16, background: '#f5f5f5', borderRadius: 4 }}>
-          <Row gutter={[16, 16]}>
-            {fields.map(field => (
-              <Col key={field.key} span={8}>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <span style={{ fontSize: 12, color: '#666' }}>{field.label}</span>
-                  {field.type === 'select' && field.options ? (
-                    <Select
-                      style={{ width: '100%' }}
-                      placeholder={field.placeholder || `请选择${field.label}`}
-                      value={values[field.key] || undefined}
-                      onChange={(value) => handleChange(field.key, value || '')}
-                      options={field.options}
-                    />
-                  ) : (
-                    <Input
-                      type={field.type === 'number' ? 'number' : 'text'}
-                      placeholder={field.placeholder || `请输入${field.label}`}
-                      value={values[field.key] || ''}
-                      onChange={(e) => handleChange(field.key, e.target.value)}
-                    />
-                  )}
-                </Space>
-              </Col>
-            ))}
-          </Row>
-          <Row style={{ marginTop: 16 }}>
-            <Col offset={16} span={8}>
-              <Space>
-                <Button icon={<FilterOutlined />} onClick={handleSearch}>搜索</Button>
-                <Button onClick={handleReset}>重置</Button>
-              </Space>
-            </Col>
-          </Row>
-        </div>
-      )}
+    <div style={{ width: '100%', padding: 16, background: '#f5f5f5', borderRadius: 4 }}>
+      <Row gutter={[16, 16]}>
+        {fields.map(field => (
+          <Col key={field.key} span={6}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <span style={{ fontSize: 12, color: '#666' }}>{field.label}</span>
+              {field.type === 'select' && field.options ? (
+                <Select
+                  style={{ width: '100%' }}
+                  placeholder={field.placeholder || `请选择${field.label}`}
+                  value={values[field.key] || undefined}
+                  onChange={(value) => handleChange(field.key, value || '')}
+                  options={field.options}
+                />
+              ) : (
+                <Input
+                  type={field.type === 'number' ? 'number' : 'text'}
+                  placeholder={field.placeholder || `请输入${field.label}`}
+                  value={values[field.key] || ''}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                />
+              )}
+            </Space>
+          </Col>
+        ))}
+      </Row>
+      <Row style={{ marginTop: 16 }}>
+        <Col offset={16} span={8}>
+          <Space>
+            <Button icon={<FilterOutlined />} onClick={handleSearch}>搜索</Button>
+            <Button onClick={handleReset}>重置</Button>
+          </Space>
+        </Col>
+      </Row>
     </div>
   )
 }

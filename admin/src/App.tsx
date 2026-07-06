@@ -22,6 +22,7 @@ import Profile from '@/pages/Profile'
 import RoleManage from '@/pages/RoleManage'
 import PermissionManage from '@/pages/PermissionManage'
 import AdminManage from '@/pages/AdminManage'
+import UserManage from '@/pages/UserManage'
 import { PermissionProvider } from '@/context/PermissionContext'
 
 function App() {
@@ -50,7 +51,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={<Login onLogin={() => setIsLoggedIn(true)} />} />
         <Route
@@ -81,6 +82,7 @@ function App() {
           <Route path="role" element={<RoleManage />} />
           <Route path="permission" element={<PermissionManage />} />
           <Route path="admin-manage" element={<AdminManage />} />
+          <Route path="user" element={<UserManage />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>

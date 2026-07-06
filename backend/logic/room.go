@@ -32,12 +32,12 @@ func GetRoomList() ([]model.Room, error) {
 	return rooms, nil
 }
 
-func GetRoomListFiltered(typeID int, floor string, status int, name string) ([]model.Room, error) {
-	rooms, err := mysql.GetRoomListFiltered(typeID, floor, status, name)
+func GetRoomListFiltered(typeID int, floor string, status int, name string, page, pageSize int) ([]model.Room, int64, error) {
+	rooms, total, err := mysql.GetRoomListFiltered(typeID, floor, status, name, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return rooms, nil
+	return rooms, total, nil
 }
 
 func GetRoomListByTypeID(typeID string) ([]model.Room, error) {
@@ -115,25 +115,74 @@ func DeleteRoom(id string) error {
 	return nil
 }
 
-func GetRoomTypeList() ([]model.RoomType, error) {
-	cacheKey := "room:type:list"
-	if cacheData, err := redis.Get(cacheKey); err == nil && cacheData != "" {
-		var types []model.RoomType
-		if err := json.Unmarshal([]byte(cacheData), &types); err == nil {
-			return types, nil
+func BatchDeleteRoom(ids []string) error {
+	var roomIDs []int64
+	for _, id := range ids {
+		roomID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		roomIDs = append(roomIDs, roomID)
+	}
+	if err := mysql.BatchDeleteRoom(roomIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	redis.Del("room:list")
+	return nil
+}
+
+func BatchUpdateRoom(reqs []struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	TypeID   int64  `json:"type_id"`
+	Floor    string `json:"floor"`
+	Capacity int    `json:"capacity"`
+	Images   string `json:"images"`
+	Status   int    `json:"status"`
+}) error {
+	for _, req := range reqs {
+		room, err := mysql.GetRoomByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.RoomNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Name != "" {
+			room.Name = req.Name
+		}
+		if req.TypeID != 0 {
+			room.TypeID = req.TypeID
+		}
+		if req.Floor != "" {
+			room.Floor = req.Floor
+		}
+		if req.Capacity != 0 {
+			room.Capacity = req.Capacity
+		}
+		if req.Images != "" {
+			room.Images = req.Images
+		}
+		if req.Status >= 0 {
+			room.Status = req.Status
+		}
+
+		if err := mysql.UpdateRoom(room); err != nil {
+			return errno.New(errno.InternalError)
 		}
 	}
 
-	types, err := mysql.GetRoomTypeList(0)
+	redis.Del("room:list")
+	return nil
+}
+
+func GetRoomTypeList(page, pageSize int) ([]model.RoomType, int64, error) {
+	types, total, err := mysql.GetRoomTypeList(0, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-
-	if data, err := json.Marshal(types); err == nil {
-		redis.Set(cacheKey, string(data), 300)
-	}
-
-	return types, nil
+	return types, total, nil
 }
 
 func GetRoomTypeByID(id string) (*model.RoomType, error) {
@@ -175,6 +224,60 @@ func DeleteRoomType(id string) error {
 	if err := mysql.DeleteRoomType(typeID); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	redis.Del("room:type:list")
+	return nil
+}
+
+func BatchDeleteRoomType(ids []string) error {
+	var typeIDs []int64
+	for _, id := range ids {
+		typeID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		typeIDs = append(typeIDs, typeID)
+	}
+	if err := mysql.BatchDeleteRoomType(typeIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	redis.Del("room:type:list")
+	return nil
+}
+
+func BatchUpdateRoomType(reqs []struct {
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	BasePrice   float64 `json:"base_price"`
+	MaxPeople   int     `json:"max_people"`
+}) error {
+	for _, req := range reqs {
+		roomType, err := mysql.GetRoomTypeByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.RoomTypeNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Name != "" {
+			roomType.Name = req.Name
+		}
+		if req.Description != "" {
+			roomType.Description = req.Description
+		}
+		if req.BasePrice > 0 {
+			roomType.BasePrice = req.BasePrice
+		}
+		if req.MaxPeople > 0 {
+			roomType.MaxPeople = req.MaxPeople
+		}
+
+		if err := mysql.UpdateRoomType(roomType); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
 	redis.Del("room:type:list")
 	return nil
 }

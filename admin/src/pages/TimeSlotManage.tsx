@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag, Space } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Tag, Checkbox } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { timeSlotApi, roomTypeApi } from '@/api'
 import { TimeSlot, RoomType } from '@/types'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
 
 export default function TimeSlotManage() {
   const [data, setData] = useState<TimeSlot[]>([])
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<TimeSlot[]>([])
   const [form] = Form.useForm()
 
   useEffect(() => {
@@ -17,10 +28,16 @@ export default function TimeSlotManage() {
     fetchRoomTypes()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await timeSlotApi.getList(params)
-      setData(result)
+      const result = await timeSlotApi.getList({ ...params, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch time slots:', error)
     }
@@ -29,7 +46,7 @@ export default function TimeSlotManage() {
   const fetchRoomTypes = async () => {
     try {
       const result = await roomTypeApi.getList()
-      setRoomTypes(result)
+      setRoomTypes(Array.isArray(result) ? result : (result as { data: RoomType[] }).data)
     } catch (error) {
       console.error('Failed to fetch room types:', error)
     }
@@ -54,6 +71,35 @@ export default function TimeSlotManage() {
       fetchData()
     } catch (error) {
       console.error('Failed to delete:', error)
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await timeSlotApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(t => ids.includes(String(t.id)))
+    setSelectedTimeSlots(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await timeSlotApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
     }
   }
 
@@ -89,6 +135,23 @@ export default function TimeSlotManage() {
   }
 
   const columns = [
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: TimeSlot) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '房间类型', dataIndex: 'type_id', key: 'type_id', render: (v: number) => getRoomTypeName(v) },
     { title: '时间槽名称', dataIndex: 'name', key: 'name' },
@@ -113,9 +176,8 @@ export default function TimeSlotManage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>时间槽管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'type_id', label: '房间类型', type: 'select', options: roomTypes.map(t => ({ label: t.name, value: String(t.id) })) },
@@ -123,10 +185,39 @@ export default function TimeSlotManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>时间槽管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="时间槽管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加时间槽</Button>
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title={editingId ? '编辑时间槽' : '添加时间槽'}
@@ -179,6 +270,23 @@ export default function TimeSlotManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedTimeSlots}
+        fields={[
+          { key: 'name', label: '时间槽名称', type: 'input' },
+          { key: 'start_time', label: '开始时间', type: 'input' },
+          { key: 'end_time', label: '结束时间', type: 'input' },
+          { key: 'price', label: '价格', type: 'number' },
+          { key: 'weekday_price', label: '工作日价格', type: 'number' },
+          { key: 'weekend_price', label: '周末价格', type: 'number' },
+          { key: 'holiday_price', label: '节假日价格', type: 'number' },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }] }
+        ]}
+        title="批量编辑时间槽"
+      />
     </div>
   )
 }

@@ -84,7 +84,7 @@ type Admin struct {
 	Password  string    `gorm:"column:password;size:255" json:"-" comment:"密码"`
 	Realname  string    `gorm:"column:realname;size:100" json:"realname" comment:"真实姓名"`
 	Phone     string    `gorm:"column:phone;size:20;unique_index" json:"phone" comment:"手机号"`
-	Email     string    `gorm:"column:email;size:50;unique_index" json:"email" comment:"邮箱"`
+	Email     *string   `gorm:"column:email;size:50;unique_index" json:"email" comment:"邮箱"`
 	RoleType  int       `gorm:"column:role;default:1" json:"role" comment:"管理员类型"`
 	RoleID    int64     `gorm:"column:role_id;default:1" json:"role_id" comment:"角色ID"`
 	Role      AdminRole `gorm:"foreignkey:RoleID;association_autoupdate:false;association_autocreate:false" json:"role" comment:"角色信息"`

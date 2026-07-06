@@ -8,6 +8,13 @@ export default defineConfig({
       '@': '/src'
     }
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api']
+      }
+    }
+  },
   server: {
     port: 3001,
     proxy: {

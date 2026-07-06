@@ -40,12 +40,12 @@ func GetActivityListAdmin() ([]model.Activity, error) {
 	return activities, nil
 }
 
-func GetActivityListAdminFiltered(name string, status int) ([]model.Activity, error) {
-	activities, err := mysql.GetActivityListAdminFiltered(name, status)
+func GetActivityListAdminFiltered(name string, status, page, pageSize int) ([]model.Activity, int64, error) {
+	activities, total, err := mysql.GetActivityListAdminFiltered(name, status, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return activities, nil
+	return activities, total, nil
 }
 
 func GetActivityByID(id string) (*model.Activity, error) {
@@ -106,6 +106,46 @@ func DeleteActivity(id string) error {
 	if err := mysql.DeleteActivity(activityID); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	redis.Del("activity:list")
+	return nil
+}
+
+func BatchDeleteActivity(ids []string) error {
+	var activityIDs []int64
+	for _, id := range ids {
+		activityID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		activityIDs = append(activityIDs, activityID)
+	}
+	if err := mysql.BatchDeleteActivity(activityIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	redis.Del("activity:list")
+	return nil
+}
+
+func BatchUpdateActivity(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		activity, err := mysql.GetActivityByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.ActivityNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		activity.Status = req.Status
+
+		if err := mysql.UpdateActivity(activity); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
 	redis.Del("activity:list")
 	return nil
 }

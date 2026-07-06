@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,12 +30,36 @@ type OperationLogCreateRequest struct {
 func GetOperationLogList(c *gin.Context) {
 	adminID := c.Query("admin_id")
 	module := c.Query("module")
-	logs, err := logic.GetOperationLogList(adminID, module)
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	var page int = 1
+	var pageSize int = 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	logs, total, err := logic.GetOperationLogList(adminID, module, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, logs)
+	response.Success(c, gin.H{
+		"data":  logs,
+		"total": total,
+	})
 }
 
 // @Summary 获取操作日志详情
@@ -109,4 +134,52 @@ func DeleteOperationLog(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除操作日志
+// @Description 批量删除操作日志
+// @Tags 操作日志管理
+// @Accept json
+// @Produce json
+// @Param body body struct{ IDs []string `json:"ids"` } true "操作日志ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Router /operation-logs/batch [delete]
+func BatchDeleteOperationLog(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if err := logic.BatchDeleteOperationLog(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新操作日志
+// @Description 批量更新操作日志
+// @Tags 操作日志管理
+// @Accept json
+// @Produce json
+// @Param body body []model.OperationLog true "操作日志列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Router /operation-logs/batch [put]
+func BatchUpdateOperationLog(c *gin.Context) {
+	var logs []model.OperationLog
+	if err := c.ShouldBindJSON(&logs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if err := logic.BatchUpdateOperationLog(logs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

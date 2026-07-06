@@ -148,3 +148,73 @@ func UpdateUserStatus(userID int64, status int) (*model.User, error) {
 
 	return user, nil
 }
+
+func GetUserListFiltered(nickname, phone string, status, page, pageSize int) ([]model.User, int64, error) {
+	users, total, err := mysql.GetUserListFiltered(nickname, phone, status, page, pageSize)
+	if err != nil {
+		return nil, 0, errno.New(errno.InternalError)
+	}
+	return users, total, nil
+}
+
+func CreateUser(user *model.User) error {
+	if err := mysql.CreateUser(user); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func DeleteUser(id int64) error {
+	if err := mysql.DeleteUser(id); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeleteUser(ids []int64) error {
+	if err := mysql.BatchDeleteUser(ids); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateUser(reqs []struct {
+	ID       int    `json:"id"`
+	Nickname string `json:"nickname"`
+	Phone    string `json:"phone"`
+	Realname string `json:"realname"`
+	Gender   int    `json:"gender"`
+	Status   int    `json:"status"`
+}) error {
+	for _, req := range reqs {
+		user, err := mysql.GetUserByID(int64(req.ID))
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.UserNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Nickname != "" {
+			user.Nickname = req.Nickname
+		}
+		if req.Phone != "" {
+			user.Phone = req.Phone
+		}
+		if req.Realname != "" {
+			user.Realname = req.Realname
+		}
+		if req.Gender != 0 {
+			user.Gender = req.Gender
+		}
+		if req.Status >= 0 {
+			user.Status = req.Status
+		}
+
+		if err := mysql.UpdateUser(user); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
+	return nil
+}

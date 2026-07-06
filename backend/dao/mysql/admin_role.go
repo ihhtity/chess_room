@@ -18,12 +18,30 @@ func GetAdminRoleByID(id int64) (*model.AdminRole, error) {
 	return &role, nil
 }
 
-func GetAdminRoleList() ([]model.AdminRole, error) {
+func GetAdminRoleListFiltered(name string, status int, page, pageSize int) ([]model.AdminRole, int64, error) {
 	var roles []model.AdminRole
-	if err := DB.Where("status = 1").Order("level ASC").Find(&roles).Error; err != nil {
-		return nil, errors.New("获取角色列表失败")
+	var total int64
+	query := DB.Model(&model.AdminRole{}).Order("level ASC")
+
+	if name != "" {
+		query = query.Where("name LIKE ?", "%"+name+"%")
 	}
-	return roles, nil
+	if status >= 0 {
+		query = query.Where("status = ?", status)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, errors.New("获取角色列表失败")
+	}
+
+	if page > 0 && pageSize > 0 {
+		query = query.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+
+	if err := query.Find(&roles).Error; err != nil {
+		return nil, 0, errors.New("获取角色列表失败")
+	}
+	return roles, total, nil
 }
 
 func CreateAdminRole(role *model.AdminRole) error {

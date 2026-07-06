@@ -36,8 +36,20 @@ func SetupRouter() *gin.Engine {
 		user.POST("/change-password", middleware.AuthMiddleware(), controller.ChangePassword)
 		// 获取用户列表接口（需要管理员权限）
 		user.GET("/", middleware.AdminMiddleware(), controller.GetUserList)
+		// 获取用户详情（需要管理员权限）
+		user.GET("/:id", middleware.AdminMiddleware(), controller.GetUserDetail)
+		// 创建用户（需要管理员权限）
+		user.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateUser)
+		// 更新用户（需要管理员权限）
+		user.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateUser)
 		// 更新用户状态（需要管理员权限）
 		user.PUT("/:id/status", middleware.AdminMiddleware(), controller.UpdateUserStatus)
+		// 批量更新用户（需要管理员权限）
+		user.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateUser)
+		// 删除用户（需要管理员权限）
+		user.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteUser)
+		// 批量删除用户（需要管理员权限）
+		user.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteUser)
 	}
 
 	// 创建房间列表路由组（公开）
@@ -60,8 +72,12 @@ func SetupRouter() *gin.Engine {
 		room.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateRoom)
 		// 更新房间
 		room.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateRoom)
-		// 删除房间
+		// 批量更新房间（需要管理员权限）
+		room.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateRoom)
+		// 删除房间（需要管理员权限）
 		room.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteRoom)
+		// 批量删除房间（需要管理员权限）
+		room.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteRoom)
 	}
 
 	// 创建房间类型路由组
@@ -75,8 +91,12 @@ func SetupRouter() *gin.Engine {
 		roomType.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateRoomType)
 		// 更新房间类型（需要管理员权限）
 		roomType.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateRoomType)
+		// 批量更新房间类型（需要管理员权限）
+		roomType.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateRoomType)
 		// 删除房间类型（需要管理员权限）
 		roomType.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteRoomType)
+		// 批量删除房间类型（需要管理员权限）
+		roomType.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteRoomType)
 	}
 
 	// 创建订单路由组（用户端）
@@ -105,12 +125,16 @@ func SetupRouter() *gin.Engine {
 		order.GET("/:id", middleware.AdminMiddleware(), controller.GetOrderDetail)
 		// 更新订单（需要管理员权限）
 		order.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateOrder)
+		// 批量更新订单（需要管理员权限）
+		order.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateOrder)
 		// 确认订单（需要管理员权限）
 		order.PUT("/:id/confirm", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.ConfirmOrder)
 		// 完成订单（需要管理员权限）
 		order.PUT("/:id/complete", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CompleteOrder)
 		// 删除订单（需要管理员权限）
 		order.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteOrder)
+		// 批量删除订单（需要管理员权限）
+		order.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteOrder)
 	}
 
 	// 创建微信相关路由组
@@ -144,8 +168,12 @@ func SetupRouter() *gin.Engine {
 		memberships.GET("/:id", middleware.AdminMiddleware(), controller.GetMembershipDetail)
 		// 更新会员信息（需要管理员权限）
 		memberships.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateMembership)
+		// 批量更新会员（需要管理员权限）
+		memberships.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateMembership)
 		// 删除会员（需要管理员权限）
 		memberships.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteMembership)
+		// 批量删除会员（需要管理员权限）
+		memberships.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteMembership)
 	}
 
 	// 创建充值路由组
@@ -170,6 +198,7 @@ func SetupRouter() *gin.Engine {
 			roles.GET("/available", controller.GetAvailableRoles)
 			roles.POST("/", controller.CreateAdminRole)
 			roles.PUT("/:id", controller.UpdateAdminRole)
+			roles.PUT("/batch", controller.BatchUpdateAdminRole)
 			roles.DELETE("/:id", controller.DeleteAdminRole)
 		}
 
@@ -182,6 +211,7 @@ func SetupRouter() *gin.Engine {
 			permissions.GET("/mine", controller.GetMyPermissions)
 			permissions.POST("/", controller.CreatePermission)
 			permissions.PUT("/:id", controller.UpdatePermission)
+			permissions.PUT("/batch", controller.BatchUpdatePermission)
 			permissions.DELETE("/:id", controller.DeletePermission)
 			permissions.POST("/role/:role_id", controller.AssignPermissions)
 		}
@@ -191,6 +221,7 @@ func SetupRouter() *gin.Engine {
 			admins.GET("/", controller.GetAdminList)
 			admins.POST("/", controller.CreateAdmin)
 			admins.PUT("/:id", controller.UpdateAdmin)
+			admins.PUT("/batch", controller.BatchUpdateAdmin)
 			admins.DELETE("/:id", controller.DeleteAdmin)
 			admins.POST("/:id/reset-password", controller.ResetAdminPassword)
 		}
@@ -207,8 +238,12 @@ func SetupRouter() *gin.Engine {
 		activities.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateActivity)
 		// 更新活动（需要管理员权限）
 		activities.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateActivity)
+		// 批量更新活动（需要管理员权限）
+		activities.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateActivity)
 		// 删除活动（需要管理员权限）
 		activities.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteActivity)
+		// 批量删除活动（需要管理员权限）
+		activities.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteActivity)
 	}
 
 	// 创建公告路由组
@@ -222,8 +257,12 @@ func SetupRouter() *gin.Engine {
 		announcements.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateAnnouncement)
 		// 更新公告（需要管理员权限）
 		announcements.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateAnnouncement)
+		// 批量更新公告（需要管理员权限）
+		announcements.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateAnnouncement)
 		// 删除公告（需要管理员权限）
 		announcements.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteAnnouncement)
+		// 批量删除公告（需要管理员权限）
+		announcements.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteAnnouncement)
 	}
 
 	// 创建充值套餐路由组
@@ -237,8 +276,12 @@ func SetupRouter() *gin.Engine {
 		rechargePackages.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateRechargePackage)
 		// 更新充值套餐（需要管理员权限）
 		rechargePackages.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateRechargePackage)
+		// 批量更新充值套餐（需要管理员权限）
+		rechargePackages.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateRechargePackage)
 		// 删除充值套餐（需要管理员权限）
 		rechargePackages.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteRechargePackage)
+		// 批量删除充值套餐（需要管理员权限）
+		rechargePackages.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteRechargePackage)
 	}
 
 	// 创建时间槽路由组
@@ -252,8 +295,12 @@ func SetupRouter() *gin.Engine {
 		timeSlots.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateTimeSlot)
 		// 更新时间槽（需要管理员权限）
 		timeSlots.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateTimeSlot)
+		// 批量更新时间槽（需要管理员权限）
+		timeSlots.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateTimeSlot)
 		// 删除时间槽（需要管理员权限）
 		timeSlots.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteTimeSlot)
+		// 批量删除时间槽（需要管理员权限）
+		timeSlots.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteTimeSlot)
 	}
 
 	// 创建评价路由组
@@ -267,8 +314,12 @@ func SetupRouter() *gin.Engine {
 		reviews.POST("/", middleware.AuthMiddleware(), controller.CreateReview)
 		// 更新评价（需要管理员权限）
 		reviews.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateReview)
+		// 批量更新评价（需要管理员权限）
+		reviews.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateReview)
 		// 删除评价（需要管理员权限）
 		reviews.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteReview)
+		// 批量删除评价（需要管理员权限）
+		reviews.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteReview)
 	}
 
 	// 创建节假日路由组
@@ -282,8 +333,12 @@ func SetupRouter() *gin.Engine {
 		holidays.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateHoliday)
 		// 更新节假日（需要管理员权限）
 		holidays.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateHoliday)
+		// 批量更新节假日（需要管理员权限）
+		holidays.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateHoliday)
 		// 删除节假日（需要管理员权限）
 		holidays.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteHoliday)
+		// 批量删除节假日（需要管理员权限）
+		holidays.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteHoliday)
 	}
 
 	// 创建支付路由组
@@ -295,8 +350,12 @@ func SetupRouter() *gin.Engine {
 		paymentsApi.GET("/:id", controller.GetPaymentDetail)
 		// 更新支付记录（需要管理员权限）
 		paymentsApi.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdatePayment)
+		// 批量更新支付记录（需要管理员权限）
+		paymentsApi.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdatePayment)
 		// 删除支付记录（需要管理员权限）
 		paymentsApi.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeletePayment)
+		// 批量删除支付记录（需要管理员权限）
+		paymentsApi.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeletePayment)
 	}
 
 	// 创建充值记录路由组
@@ -310,8 +369,12 @@ func SetupRouter() *gin.Engine {
 		rechargeRecords.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateRechargeRecord)
 		// 更新充值记录（需要管理员权限）
 		rechargeRecords.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateRechargeRecord)
+		// 批量更新充值记录（需要管理员权限）
+		rechargeRecords.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateRechargeRecord)
 		// 删除充值记录（需要管理员权限）
 		rechargeRecords.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteRechargeRecord)
+		// 批量删除充值记录（需要管理员权限）
+		rechargeRecords.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteRechargeRecord)
 	}
 
 	// 创建通知路由组
@@ -325,8 +388,12 @@ func SetupRouter() *gin.Engine {
 		notifications.POST("/", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.CreateNotification)
 		// 更新通知（需要管理员权限）
 		notifications.PUT("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.UpdateNotification)
+		// 批量更新通知（需要管理员权限）
+		notifications.PUT("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchUpdateNotification)
 		// 删除通知（需要管理员权限）
 		notifications.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteNotification)
+		// 批量删除通知（需要管理员权限）
+		notifications.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteNotification)
 		// 标记全部已读（需要认证）
 		notifications.POST("/mark-all-read", middleware.AuthMiddleware(), controller.MarkAllNotificationAsRead)
 	}
@@ -342,6 +409,33 @@ func SetupRouter() *gin.Engine {
 		operationLogs.POST("/", middleware.AdminMiddleware(), controller.CreateOperationLog)
 		// 删除操作日志（需要管理员权限）
 		operationLogs.DELETE("/:id", middleware.AdminMiddleware(), controller.DeleteOperationLog)
+		// 批量删除操作日志（需要管理员权限）
+		operationLogs.DELETE("/batch", middleware.AdminMiddleware(), controller.BatchDeleteOperationLog)
+		// 批量更新操作日志（需要管理员权限）
+		operationLogs.PUT("/batch", middleware.AdminMiddleware(), controller.BatchUpdateOperationLog)
+	}
+
+	// 创建导出路由组
+	export := api.Group("/export", middleware.AdminMiddleware())
+	{
+		export.GET("/rooms", controller.ExportRoomList)
+		export.GET("/activities", controller.ExportActivityList)
+		export.GET("/orders", controller.ExportOrderList)
+		export.GET("/admins", controller.ExportAdminList)
+		export.GET("/members", controller.ExportMemberList)
+		export.GET("/reviews", controller.ExportReviewList)
+		export.GET("/announcements", controller.ExportAnnouncementList)
+		export.GET("/recharge-packages", controller.ExportRechargePackageList)
+		export.GET("/time-slots", controller.ExportTimeSlotList)
+		export.GET("/holidays", controller.ExportHolidayList)
+		export.GET("/users", controller.ExportUserList)
+		export.GET("/notifications", controller.ExportNotificationList)
+		export.GET("/payments", controller.ExportPaymentList)
+		export.GET("/recharge-records", controller.ExportRechargeRecordList)
+		export.GET("/operation-logs", controller.ExportOperationLogList)
+		export.GET("/roles", controller.ExportRoleList)
+		export.GET("/permissions", controller.ExportPermissionList)
+		export.GET("/all", controller.ExportAllData)
 	}
 
 	// 返回配置好的路由引擎

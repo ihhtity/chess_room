@@ -4,14 +4,25 @@ import (
 	"chess-room-backend/model"
 )
 
-func GetHolidayList(isHoliday int) ([]model.Holiday, error) {
+func GetHolidayList(isHoliday, page, pageSize int) ([]model.Holiday, int64, error) {
 	var holidays []model.Holiday
-	db := DB
+	var total int64
+	db := DB.Model(&model.Holiday{})
 	if isHoliday != -1 {
 		db = db.Where("is_holiday = ?", isHoliday)
 	}
-	err := db.Order("date DESC").Find(&holidays).Error
-	return holidays, err
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		db = DB
+		if isHoliday != -1 {
+			db = db.Where("is_holiday = ?", isHoliday)
+		}
+		db = db.Order("date DESC").Offset((page - 1) * pageSize).Limit(pageSize)
+	}
+	err := db.Find(&holidays).Error
+	return holidays, total, err
 }
 
 func GetHolidayByID(id int64) (*model.Holiday, error) {
@@ -30,4 +41,8 @@ func UpdateHolidayByID(id int64, data map[string]interface{}) error {
 
 func DeleteHoliday(id int64) error {
 	return DB.Delete(&model.Holiday{}, id).Error
+}
+
+func BatchDeleteHoliday(ids []int64) error {
+	return DB.Where("id IN (?)", ids).Delete(&model.Holiday{}).Error
 }

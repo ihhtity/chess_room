@@ -22,8 +22,10 @@ type OrderCreateRequest struct {
 // @Tags 订单
 // @Accept json
 // @Produce json
-// @Param room_id query int false "房间ID"
-// @Param status query int false "订单状态"
+// @Param order_no query string false "订单号"
+// @Param user_id query string false "用户ID"
+// @Param room_id query string false "房间ID"
+// @Param status query string false "订单状态"
 // @Security BearerAuth
 // @Success 200 {object} response.Response{data=[]model.Order}
 // @Failure 400 {object} response.Response
@@ -31,11 +33,17 @@ type OrderCreateRequest struct {
 // @Router /orders [get]
 func GetOrderList(c *gin.Context) {
 	userID := c.GetInt64("user_id")
+	orderNo := c.Query("order_no")
 	roomID := c.Query("room_id")
 	status := c.Query("status")
+	userIDStr := c.Query("user_id")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	var roomIDInt int
-	var statusInt int
+	var statusInt int = -1
+	var page int
+	var pageSize int
 	var err error
 
 	if roomID != "" {
@@ -54,6 +62,15 @@ func GetOrderList(c *gin.Context) {
 		}
 	}
 
+	if userIDStr != "" {
+		userIDInt, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			response.Fail(c, 400, "用户ID格式错误")
+			return
+		}
+		userID = userIDInt
+	}
+
 	if userID == 0 {
 		adminID := c.GetInt64("admin_id")
 		if adminID != 0 {
@@ -61,13 +78,34 @@ func GetOrderList(c *gin.Context) {
 		}
 	}
 
-	orders, err := logic.GetOrderList(userID, roomIDInt, statusInt, time.Time{}, time.Time{})
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 0 {
+			page = 1
+		}
+	} else {
+		page = 1
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 0 {
+			pageSize = 10
+		}
+	} else {
+		pageSize = 10
+	}
+
+	orders, total, err := logic.GetOrderList(userID, roomIDInt, statusInt, orderNo, time.Time{}, time.Time{}, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, orders)
+	response.Success(c, gin.H{
+		"data":  orders,
+		"total": total,
+	})
 }
 
 // @Summary 获取订单详情
@@ -275,6 +313,65 @@ func DeleteOrder(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "删除成功", nil)
+}
+
+// @Summary 批量删除订单
+// @Description 管理员批量删除订单
+// @Tags 订单
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "订单ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /orders/batch [delete]
+func BatchDeleteOrder(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的订单")
+		return
+	}
+	if err := logic.BatchDeleteOrder(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新订单
+// @Description 管理员批量更新订单状态
+// @Tags 订单
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "订单更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /order/batch [put]
+func BatchUpdateOrder(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateOrder(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
 
 type OrderUpdateRequest struct {

@@ -9,20 +9,20 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetRechargePackageList() ([]model.RechargePackage, error) {
-	packages, err := mysql.GetRechargePackageList()
+func GetRechargePackageList(page, pageSize int) ([]model.RechargePackage, int64, error) {
+	packages, total, err := mysql.GetRechargePackageList(page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return packages, nil
+	return packages, total, nil
 }
 
-func GetRechargePackageListFiltered(name string, status int) ([]model.RechargePackage, error) {
-	packages, err := mysql.GetRechargePackageListFiltered(name, status)
+func GetRechargePackageListFiltered(name string, status, page, pageSize int) ([]model.RechargePackage, int64, error) {
+	packages, total, err := mysql.GetRechargePackageListFiltered(name, status, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return packages, nil
+	return packages, total, nil
 }
 
 func GetRechargePackageByID(id string) (*model.RechargePackage, error) {
@@ -78,6 +78,43 @@ func DeleteRechargePackage(id string) error {
 	}
 	if err := mysql.DeleteRechargePackage(packageID); err != nil {
 		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeleteRechargePackage(ids []string) error {
+	var packageIDs []int64
+	for _, id := range ids {
+		packageID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		packageIDs = append(packageIDs, packageID)
+	}
+	if err := mysql.BatchDeleteRechargePackage(packageIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateRechargePackage(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		pkg, err := mysql.GetRechargePackageByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.RechargePackageNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		pkg.Status = req.Status
+
+		if err := mysql.UpdateRechargePackage(pkg); err != nil {
+			return errno.New(errno.InternalError)
+		}
 	}
 	return nil
 }

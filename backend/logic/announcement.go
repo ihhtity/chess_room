@@ -9,20 +9,20 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetAnnouncementList() ([]model.Announcement, error) {
-	announcements, err := mysql.GetAnnouncementList()
+func GetAnnouncementList(page, pageSize int) ([]model.Announcement, int64, error) {
+	announcements, total, err := mysql.GetAnnouncementList(page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return announcements, nil
+	return announcements, total, nil
 }
 
-func GetAnnouncementListFiltered(title string, typeInt, statusInt int) ([]model.Announcement, error) {
-	announcements, err := mysql.GetAnnouncementListFiltered(title, typeInt, statusInt)
+func GetAnnouncementListFiltered(title string, typeInt, statusInt, page, pageSize int) ([]model.Announcement, int64, error) {
+	announcements, total, err := mysql.GetAnnouncementListFiltered(title, typeInt, statusInt, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return announcements, nil
+	return announcements, total, nil
 }
 
 func GetAnnouncementByID(id string) (*model.Announcement, error) {
@@ -76,6 +76,43 @@ func DeleteAnnouncement(id string) error {
 	}
 	if err := mysql.DeleteAnnouncement(announcementID); err != nil {
 		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchDeleteAnnouncement(ids []string) error {
+	var announcementIDs []int64
+	for _, id := range ids {
+		announcementID, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			return errno.New(errno.BadRequest)
+		}
+		announcementIDs = append(announcementIDs, announcementID)
+	}
+	if err := mysql.BatchDeleteAnnouncement(announcementIDs); err != nil {
+		return errno.New(errno.InternalError)
+	}
+	return nil
+}
+
+func BatchUpdateAnnouncement(reqs []struct {
+	ID     int64 `json:"id"`
+	Status int   `json:"status"`
+}) error {
+	for _, req := range reqs {
+		announcement, err := mysql.GetAnnouncementByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.AnnouncementNotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		announcement.Status = req.Status
+
+		if err := mysql.UpdateAnnouncement(announcement); err != nil {
+			return errno.New(errno.InternalError)
+		}
 	}
 	return nil
 }

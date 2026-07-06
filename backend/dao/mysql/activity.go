@@ -18,17 +18,31 @@ func GetActivityListAdmin() ([]model.Activity, error) {
 	return activities, err
 }
 
-func GetActivityListAdminFiltered(name string, status int) ([]model.Activity, error) {
+func GetActivityListAdminFiltered(name string, status, page, pageSize int) ([]model.Activity, int64, error) {
 	var activities []model.Activity
-	db := DB.Order("sort_order ASC, created_at DESC")
+	var total int64
+	db := DB.Model(&model.Activity{}).Order("sort_order ASC, created_at DESC")
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
 	if status >= 0 {
 		db = db.Where("status = ?", status)
 	}
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		db = DB.Order("sort_order ASC, created_at DESC")
+		if name != "" {
+			db = db.Where("name LIKE ?", "%"+name+"%")
+		}
+		if status >= 0 {
+			db = db.Where("status = ?", status)
+		}
+		db = db.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
 	err := db.Find(&activities).Error
-	return activities, err
+	return activities, total, err
 }
 
 func GetActivityByID(id int64) (*model.Activity, error) {
@@ -47,4 +61,8 @@ func UpdateActivity(activity *model.Activity) error {
 
 func DeleteActivity(id int64) error {
 	return DB.Delete(&model.Activity{}, id).Error
+}
+
+func BatchDeleteActivity(ids []int64) error {
+	return DB.Where("id IN (?)", ids).Delete(&model.Activity{}).Error
 }

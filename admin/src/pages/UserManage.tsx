@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Checkbox } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, message, Checkbox } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
-import { roomApi, roomTypeApi } from '@/api'
-import { Room, RoomType } from '@/types'
-import { getRoomImage } from '@/utils/image'
+import { userApi } from '@/api'
+import { User } from '@/types'
 import SearchBar from '@/components/SearchBar'
 import BatchActions from '@/components/BatchActions'
 import CustomPagination from '@/components/CustomPagination'
 import ExportDropdown from '@/components/ExportDropdown'
 import BatchEditModal from '@/components/BatchEditModal'
+import { formatDateTime } from '@/utils'
 
-export default function RoomManage() {
-  const [data, setData] = useState<Room[]>([])
-  const [types, setTypes] = useState<RoomType[]>([])
+export default function UserManage() {
+  const [data, setData] = useState<User[]>([])
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [searchVisible, setSearchVisible] = useState(false)
@@ -21,17 +20,16 @@ export default function RoomManage() {
   const [pageSize, setPageSize] = useState(10)
   const [total, setTotal] = useState(0)
   const [batchEditVisible, setBatchEditVisible] = useState(false)
-  const [selectedRooms, setSelectedRooms] = useState<Room[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
   const [form] = Form.useForm()
 
   useEffect(() => {
     fetchData()
-    fetchTypes()
   }, [])
 
   const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await roomApi.getList({ ...params, page: String(page), page_size: String(size) })
+      const result = await userApi.getList({ ...params, page: String(page), page_size: String(size) })
       if (Array.isArray(result)) {
         setData(result)
         setTotal(result.length)
@@ -40,16 +38,7 @@ export default function RoomManage() {
         setTotal(result.total || 0)
       }
     } catch (error) {
-      console.error('Failed to fetch rooms:', error)
-    }
-  }
-
-  const fetchTypes = async () => {
-    try {
-      const result = await roomTypeApi.getList()
-      setTypes(Array.isArray(result) ? result : (result as { data: RoomType[] }).data)
-    } catch (error) {
-      console.error('Failed to fetch types:', error)
+      console.error('Failed to fetch users:', error)
     }
   }
 
@@ -59,7 +48,7 @@ export default function RoomManage() {
     setOpen(true)
   }
 
-  const handleEdit = (record: Room) => {
+  const handleEdit = (record: User) => {
     setEditingId(record.id)
     form.setFieldsValue(record)
     setOpen(true)
@@ -67,7 +56,7 @@ export default function RoomManage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await roomApi.delete(id)
+      await userApi.delete(id)
       message.success('删除成功')
       fetchData()
     } catch (error) {
@@ -76,14 +65,14 @@ export default function RoomManage() {
   }
 
   const handleBatchEdit = (ids: string[]) => {
-    const selected = data.filter(r => ids.includes(String(r.id)))
-    setSelectedRooms(selected)
+    const selected = data.filter(u => ids.includes(String(u.id)))
+    setSelectedUsers(selected)
     setBatchEditVisible(true)
   }
 
   const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
     try {
-      await roomApi.batchUpdate(updatedRecords)
+      await userApi.batchUpdate(updatedRecords)
       message.success('批量编辑成功')
       fetchData()
       setSelectedRowKeys([])
@@ -95,7 +84,7 @@ export default function RoomManage() {
 
   const handleBatchDelete = async (ids: string[]) => {
     try {
-      await roomApi.batchDelete(ids.map(id => parseInt(id)))
+      await userApi.batchDelete(ids.map(id => parseInt(id)))
       message.success('批量删除成功')
       fetchData()
       setSelectedRowKeys([])
@@ -104,13 +93,13 @@ export default function RoomManage() {
     }
   }
 
-  const handleSubmit = async (values: Partial<Room>) => {
+  const handleSubmit = async (values: Partial<User>) => {
     try {
       if (editingId) {
-        await roomApi.update(editingId, values)
+        await userApi.update(editingId, values)
         message.success('更新成功')
       } else {
-        await roomApi.create(values)
+        await userApi.create(values)
         message.success('创建成功')
       }
       setOpen(false)
@@ -121,8 +110,13 @@ export default function RoomManage() {
   }
 
   const getStatusText = (status: number) => {
-    const map: Record<number, string> = { 0: '维护中', 1: '空闲', 2: '使用中', 3: '已预约' }
+    const map: Record<number, string> = { 0: '禁用', 1: '正常' }
     return map[status] || '未知'
+  }
+
+  const getGenderText = (gender: number) => {
+    const map: Record<number, string> = { 0: '未知', 1: '男', 2: '女' }
+    return map[gender] || '未知'
   }
 
   const columns = [
@@ -130,7 +124,7 @@ export default function RoomManage() {
       title: '选择',
       key: 'selection',
       width: 60,
-      render: (_: any, record: Room) => (
+      render: (_: any, record: User) => (
         <Checkbox
           checked={selectedRowKeys.includes(String(record.id))}
           onChange={(e) => {
@@ -145,20 +139,22 @@ export default function RoomManage() {
     },
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     {
-      title: '图片', dataIndex: 'images', key: 'images', width: 80, render: (images: string) => (
+      title: '头像', dataIndex: 'avatar', key: 'avatar', width: 80, render: (avatar: string) => (
         <img
-          src={getRoomImage(images, 120, 90)}
-          alt="房间图片"
-          style={{ width: '60px', height: '45px', objectFit: 'cover', borderRadius: '4px' }}
+          src={avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}
+          alt="用户头像"
+          style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
         />
       )
     },
-    { title: '名称', dataIndex: 'name', key: 'name' },
-    { title: '类型', dataIndex: 'type', key: 'type', render: (t: RoomType) => t.name },
-    { title: '楼层', dataIndex: 'floor', key: 'floor' },
+    { title: '昵称', dataIndex: 'nickname', key: 'nickname' },
+    { title: '真实姓名', dataIndex: 'realname', key: 'realname' },
+    { title: '手机号', dataIndex: 'phone', key: 'phone' },
+    { title: '性别', dataIndex: 'gender', key: 'gender', render: (g: number) => getGenderText(g) },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => getStatusText(s) },
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 160, render: (t: string) => formatDateTime(t) },
     {
-      title: '操作', key: 'action', render: (_: any, record: Room) => (
+      title: '操作', key: 'action', render: (_: any, record: User) => (
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>编辑</Button>
           <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
@@ -177,15 +173,12 @@ export default function RoomManage() {
         <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
-              { key: 'name', label: '名称', type: 'input', placeholder: '请输入包间名称' },
-              { key: 'type_id', label: '类型', type: 'select', options: types.map(t => ({ label: t.name, value: String(t.id) })) },
-              { key: 'floor', label: '楼层', type: 'input', placeholder: '请输入楼层' },
+              { key: 'nickname', label: '昵称', type: 'input', placeholder: '请输入昵称' },
+              { key: 'phone', label: '手机号', type: 'input', placeholder: '请输入手机号' },
               {
                 key: 'status', label: '状态', type: 'select', options: [
-                  { label: '维护中', value: '0' },
-                  { label: '空闲', value: '1' },
-                  { label: '使用中', value: '2' },
-                  { label: '已预约', value: '3' }
+                  { label: '禁用', value: '0' },
+                  { label: '正常', value: '1' }
                 ]
               }
             ]}
@@ -194,18 +187,18 @@ export default function RoomManage() {
         </div>
       )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>包间管理</h2>
+        <h2>用户管理</h2>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
             {searchVisible ? '收起搜索' : '搜索'}
           </Button>
-          <ExportDropdown data={data} filename="包间管理数据" />
+          <ExportDropdown data={data} filename="用户管理数据" />
           <BatchActions
             selectedRowKeys={selectedRowKeys}
             onBatchEdit={handleBatchEdit}
             onBatchDelete={handleBatchDelete}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加包间</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加用户</Button>
         </div>
       </div>
       <Table 
@@ -226,37 +219,35 @@ export default function RoomManage() {
       />
 
       <Modal
-        title={editingId ? '编辑包间' : '添加包间'}
+        title={editingId ? '编辑用户' : '添加用户'}
         open={open}
         onCancel={() => setOpen(false)}
         footer={null}
       >
         <Form form={form} onFinish={handleSubmit}>
-          <Form.Item name="name" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="名称" />
+          <Form.Item name="nickname" label="昵称" rules={[{ required: true, message: '请输入昵称' }]}>
+            <Input placeholder="昵称" />
           </Form.Item>
-          <Form.Item name="type_id" rules={[{ required: true, message: '请选择类型' }]}>
-            <Select placeholder="选择类型">
-              {types.map(t => (
-                <Select.Option key={t.id} value={t.id}>{t.name}</Select.Option>
-              ))}
+          <Form.Item name="realname" label="真实姓名">
+            <Input placeholder="真实姓名" />
+          </Form.Item>
+          <Form.Item name="phone" label="手机号">
+            <Input placeholder="手机号" />
+          </Form.Item>
+          <Form.Item name="avatar" label="头像URL">
+            <Input placeholder="头像URL" />
+          </Form.Item>
+          <Form.Item name="gender" label="性别">
+            <Select placeholder="选择性别">
+              <Select.Option value={0}>未知</Select.Option>
+              <Select.Option value={1}>男</Select.Option>
+              <Select.Option value={2}>女</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="floor" rules={[{ required: true, message: '请输入楼层' }]}>
-            <Input placeholder="楼层（如：1F、2F）" />
-          </Form.Item>
-          <Form.Item name="capacity" rules={[{ required: true, message: '请输入容量' }]}>
-            <InputNumber placeholder="容量" />
-          </Form.Item>
-          <Form.Item name="images">
-            <Input placeholder="图片URL" />
-          </Form.Item>
-          <Form.Item name="status">
+          <Form.Item name="status" label="状态">
             <Select placeholder="状态">
-              <Select.Option value={0}>维护中</Select.Option>
-              <Select.Option value={1}>空闲</Select.Option>
-              <Select.Option value={2}>使用中</Select.Option>
-              <Select.Option value={3}>已预约</Select.Option>
+              <Select.Option value={0}>禁用</Select.Option>
+              <Select.Option value={1}>正常</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item>
@@ -269,15 +260,15 @@ export default function RoomManage() {
         visible={batchEditVisible}
         onCancel={() => setBatchEditVisible(false)}
         onOk={handleBatchEditSubmit}
-        records={selectedRooms}
+        records={selectedUsers}
         fields={[
-          { key: 'name', label: '名称', type: 'input' },
-          { key: 'type_id', label: '类型', type: 'select', options: types.map(t => ({ label: t.name, value: t.id })) },
-          { key: 'floor', label: '楼层', type: 'input' },
-          { key: 'capacity', label: '容量', type: 'number' },
-          { key: 'status', label: '状态', type: 'select', options: [{ label: '维护中', value: 0 }, { label: '空闲', value: 1 }, { label: '使用中', value: 2 }, { label: '已预约', value: 3 }] }
+          { key: 'nickname', label: '昵称', type: 'input' },
+          { key: 'realname', label: '真实姓名', type: 'input' },
+          { key: 'phone', label: '手机号', type: 'input' },
+          { key: 'gender', label: '性别', type: 'select', options: [{ label: '未知', value: 0 }, { label: '男', value: 1 }, { label: '女', value: 2 }] },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '禁用', value: 0 }, { label: '正常', value: 1 }] }
         ]}
-        title="批量编辑包间"
+        title="批量编辑用户"
       />
     </div>
   )

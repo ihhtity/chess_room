@@ -150,6 +150,8 @@ func GetAdminList(c *gin.Context) {
 	realname := c.Query("realname")
 	roleIDStr := c.Query("role_id")
 	statusStr := c.Query("status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	roleID := int64(0)
 	if roleIDStr != "" {
@@ -171,13 +173,33 @@ func GetAdminList(c *gin.Context) {
 		}
 	}
 
-	admins, err := logic.GetAdminList(currentAdminID, username, realname, roleID, status)
+	page := 1
+	pageSize := 10
+	var err error
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	admins, total, err := logic.GetAdminList(currentAdminID, username, realname, roleID, status, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, admins)
+	response.Success(c, gin.H{
+		"data":  admins,
+		"total": total,
+	})
 }
 
 type AdminCreateRequest struct {
@@ -332,4 +354,41 @@ func ResetAdminPassword(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "密码重置成功", nil)
+}
+
+// @Summary 批量更新管理员信息
+// @Description 批量更新管理员信息（只能更新比自己等级低的管理员）
+// @Tags 管理员管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param body body []AdminUpdateRequest true "管理员更新信息列表"
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Failure 403 {object} response.Response
+// @Router /admin/admins/batch [put]
+func BatchUpdateAdmin(c *gin.Context) {
+	currentAdminID := c.GetInt64("admin_id")
+
+	var reqs []struct {
+		ID       int64  `json:"id"`
+		Username string `json:"username"`
+		Realname string `json:"realname"`
+		Phone    string `json:"phone"`
+		Email    string `json:"email"`
+		RoleID   int64  `json:"role_id"`
+		Status   int    `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateAdmin(currentAdminID, reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

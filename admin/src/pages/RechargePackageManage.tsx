@@ -1,24 +1,41 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Checkbox } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { rechargePackageApi } from '@/api'
 import { RechargePackage } from '@/types'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
 
 export default function RechargePackageManage() {
   const [data, setData] = useState<RechargePackage[]>([])
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedPackages, setSelectedPackages] = useState<RechargePackage[]>([])
   const [form] = Form.useForm()
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await rechargePackageApi.getList(params)
-      setData(result)
+      const result = await rechargePackageApi.getList({ ...params, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch recharge packages:', error)
     }
@@ -46,6 +63,35 @@ export default function RechargePackageManage() {
     }
   }
 
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await rechargePackageApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(p => ids.includes(String(p.id)))
+    setSelectedPackages(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await rechargePackageApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
   const handleSubmit = async (values: Partial<RechargePackage>) => {
     try {
       if (editingId) {
@@ -68,6 +114,23 @@ export default function RechargePackageManage() {
   }
 
   const columns = [
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: RechargePackage) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
     { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '套餐名称', dataIndex: 'name', key: 'name' },
     { title: '充值金额', dataIndex: 'amount', key: 'amount', render: (v: number) => `¥${v}` },
@@ -89,9 +152,8 @@ export default function RechargePackageManage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>充值套餐管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'name', label: '套餐名称', type: 'input', placeholder: '请输入套餐名称' },
@@ -102,10 +164,39 @@ export default function RechargePackageManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>充值套餐管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="充值套餐管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
+          />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加套餐</Button>
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title={editingId ? '编辑充值套餐' : '添加充值套餐'}
@@ -141,6 +232,20 @@ export default function RechargePackageManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedPackages}
+        fields={[
+          { key: 'name', label: '套餐名称', type: 'input' },
+          { key: 'amount', label: '充值金额', type: 'number' },
+          { key: 'bonus', label: '赠送金额', type: 'number' },
+          { key: 'description', label: '套餐描述', type: 'textarea' },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '启用', value: 1 }, { label: '禁用', value: 0 }] }
+        ]}
+        title="批量编辑充值套餐"
+      />
     </div>
   )
 }

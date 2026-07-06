@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, DatePicker, InputNumber, Input, message, Card, Tag, Select, Space } from 'antd'
-import { EyeOutlined, EditOutlined, CheckOutlined, StopOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, DatePicker, InputNumber, Input, message, Card, Tag, Select, Checkbox } from 'antd'
+import { EyeOutlined, EditOutlined, CheckOutlined, StopOutlined, DeleteOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { orderApi, roomApi, userApi } from '@/api'
 import { Order, Room, User } from '@/types'
 import { usePermission } from '@/context/PermissionContext'
 import SearchBar from '@/components/SearchBar'
+import BatchActions from '@/components/BatchActions'
+import CustomPagination from '@/components/CustomPagination'
+import ExportDropdown from '@/components/ExportDropdown'
+import BatchEditModal from '@/components/BatchEditModal'
+import { formatDateTime } from '@/utils'
 
 export default function OrderManage() {
   const [data, setData] = useState<Order[]>([])
@@ -16,6 +21,14 @@ export default function OrderManage() {
   const [addOpen, setAddOpen] = useState(false)
   const [detail, setDetail] = useState<Order | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [searchParams, setSearchParams] = useState<Record<string, string>>({})
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedOrders, setSelectedOrders] = useState<Order[]>([])
   const [form] = Form.useForm()
   const [addForm] = Form.useForm()
   const { hasPermission } = usePermission()
@@ -26,10 +39,17 @@ export default function OrderManage() {
     fetchUsers()
   }, [])
 
-  const fetchData = async (params?: Record<string, string>) => {
+  const fetchData = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     try {
-      const result = await orderApi.getList(params)
-      setData(result)
+      const mergedParams = { ...searchParams, ...params }
+      const result = await orderApi.getList({ ...mergedParams, page: String(page), page_size: String(size) })
+      if (Array.isArray(result)) {
+        setData(result)
+        setTotal(result.length)
+      } else if (result.data) {
+        setData(result.data)
+        setTotal(result.total || 0)
+      }
     } catch (error) {
       console.error('Failed to fetch orders:', error)
     }
@@ -38,7 +58,7 @@ export default function OrderManage() {
   const fetchRooms = async () => {
     try {
       const result = await roomApi.getList()
-      setRooms(result)
+      setRooms(Array.isArray(result) ? result : (result as { data: Room[] }).data)
     } catch (error) {
       console.error('Failed to fetch rooms:', error)
     }
@@ -47,7 +67,7 @@ export default function OrderManage() {
   const fetchUsers = async () => {
     try {
       const result = await userApi.getList()
-      setUsers(result)
+      setUsers(Array.isArray(result) ? result : (result as { data: User[] }).data)
     } catch (error) {
       console.error('Failed to fetch users:', error)
     }
@@ -141,6 +161,40 @@ export default function OrderManage() {
     }
   }
 
+  const handleBatchEdit = (ids: string[]) => {
+    const selected = data.filter(o => ids.includes(String(o.id)))
+    setSelectedOrders(selected)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      const items = updatedRecords.map(record => ({
+        ...record,
+        start_time: record.start_time ? record.start_time.format('YYYY-MM-DD HH:mm:ss') : undefined,
+        end_time: record.end_time ? record.end_time.format('YYYY-MM-DD HH:mm:ss') : undefined
+      }))
+      await orderApi.batchUpdate(items)
+      message.success('批量编辑成功')
+      fetchData()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
+  const handleBatchDelete = async (ids: string[]) => {
+    try {
+      await orderApi.batchDelete(ids.map(id => parseInt(id)))
+      message.success('批量删除成功')
+      fetchData()
+      setSelectedRowKeys([])
+    } catch (error) {
+      message.error('批量删除失败')
+    }
+  }
+
   const handleAdd = () => {
     addForm.resetFields()
     setAddOpen(true)
@@ -163,11 +217,29 @@ export default function OrderManage() {
   }
 
   const columns = [
+    {
+      title: '选择',
+      key: 'selection',
+      width: 60,
+      render: (_: any, record: Order) => (
+        <Checkbox
+          checked={selectedRowKeys.includes(String(record.id))}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedRowKeys([...selectedRowKeys, String(record.id)])
+            } else {
+              setSelectedRowKeys(selectedRowKeys.filter(key => key !== String(record.id)))
+            }
+          }}
+        />
+      )
+    },
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
     { title: '订单号', dataIndex: 'order_no', key: 'order_no' },
-    { title: '用户', dataIndex: 'user', key: 'user', render: (u: any) => u?.nickname || '-' },
-    { title: '包间', dataIndex: 'room', key: 'room', render: (r: { name: string }) => r.name },
-    { title: '开始时间', dataIndex: 'start_time', key: 'start_time' },
-    { title: '结束时间', dataIndex: 'end_time', key: 'end_time' },
+    { title: '用户', dataIndex: 'user', key: 'user', width: 60, render: (u: any) => u?.nickname || '-' },
+    { title: '包间', dataIndex: 'room', key: 'room', width: 60, render: (r: { name: string }) => r.name },
+    { title: '开始时间', dataIndex: 'start_time', key: 'start_time', render: (t: string) => formatDateTime(t) },
+    { title: '结束时间', dataIndex: 'end_time', key: 'end_time', render: (t: string) => formatDateTime(t) },
     { title: '时长', dataIndex: 'duration', key: 'duration', render: (d: number) => `${d}分钟` },
     { title: '金额', dataIndex: 'total_amount', key: 'total_amount', render: (v: number) => <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>¥{v}</span> },
     { title: '已支付', dataIndex: 'paid_amount', key: 'paid_amount', render: (v: number) => `¥${v}` },
@@ -194,14 +266,21 @@ export default function OrderManage() {
   ]
 
   const handleSearch = (values: Record<string, string>) => {
-    fetchData(values)
+    const params: Record<string, string> = {}
+    Object.keys(values).forEach(key => {
+      if (values[key]) {
+        params[key] = values[key]
+      }
+    })
+    setSearchParams(params)
+    setCurrentPage(1)
+    fetchData(params, 1)
   }
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>订单管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'order_no', label: '订单号', type: 'input', placeholder: '请输入订单号' },
@@ -218,12 +297,41 @@ export default function OrderManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h2>订单管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={data} filename="订单管理数据" />
+          <BatchActions
+            selectedRowKeys={selectedRowKeys}
+            onBatchEdit={handleBatchEdit}
+            onBatchDelete={handleBatchDelete}
+          />
           {hasPermission('order_create') && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加订单</Button>
           )}
-        </Space>
+        </div>
       </div>
-      <Table dataSource={data} columns={columns} rowKey="id" />
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchData(undefined, page, size)
+        }}
+      />
 
       <Modal
         title="订单详情"
@@ -368,6 +476,20 @@ export default function OrderManage() {
           </Form.Item>
         </Form>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedOrders}
+        fields={[
+          { key: 'start_time', label: '开始时间', type: 'date' },
+          { key: 'end_time', label: '结束时间', type: 'date' },
+          { key: 'duration', label: '时长(分钟)', type: 'number' },
+          { key: 'remark', label: '备注', type: 'textarea' },
+          { key: 'status', label: '状态', type: 'select', options: [{ label: '待支付', value: 0 }, { label: '使用中', value: 1 }, { label: '已完成', value: 2 }, { label: '已取消', value: 3 }, { label: '退款中', value: 4 }, { label: '已退款', value: 5 }] }
+        ]}
+        title="批量编辑订单"
+      />
     </div>
   )
 }

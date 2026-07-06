@@ -8,12 +8,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func GetPermissionList() ([]model.Permission, error) {
-	permissions, err := mysql.GetPermissionList()
+func GetPermissionList(name, group string, page, pageSize int) ([]model.Permission, int64, error) {
+	permissions, total, err := mysql.GetPermissionListFiltered(name, group, page, pageSize)
 	if err != nil {
-		return nil, errno.New(errno.InternalError)
+		return nil, 0, errno.New(errno.InternalError)
 	}
-	return permissions, nil
+	return permissions, total, nil
 }
 
 func GetPermissionListByGroup() ([]model.Permission, error) {
@@ -134,5 +134,46 @@ func AssignPermissions(currentAdminRoleID int64, roleID int64, permissionIDs []i
 	if err := mysql.BatchCreateRolePermissions(roleID, permissionIDs); err != nil {
 		return errno.New(errno.InternalError)
 	}
+	return nil
+}
+
+func BatchUpdatePermission(reqs []struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Group       string `json:"group"`
+	Module      string `json:"module"`
+	Description string `json:"description"`
+	SortOrder   int    `json:"sort_order"`
+}) error {
+	for _, req := range reqs {
+		perm, err := mysql.GetPermissionByID(req.ID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return errno.New(errno.NotFound)
+			}
+			return errno.New(errno.InternalError)
+		}
+
+		if req.Name != "" {
+			perm.Name = req.Name
+		}
+		if req.Group != "" {
+			perm.Group = req.Group
+		}
+		if req.Module != "" {
+			perm.Module = req.Module
+		}
+		if req.Description != "" {
+			perm.Description = req.Description
+		}
+		if req.SortOrder != 0 {
+			perm.SortOrder = req.SortOrder
+		}
+
+		if err := mysql.UpdatePermission(req.ID, perm); err != nil {
+			return errno.New(errno.InternalError)
+		}
+	}
+
 	return nil
 }

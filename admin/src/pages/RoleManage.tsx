@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Checkbox } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, UnlockOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, UnlockOutlined, SearchOutlined } from '@ant-design/icons'
 import { roleApi, permissionApi } from '@/api'
 import { AdminRole, Permission } from '@/types'
 import { usePermission } from '@/context/PermissionContext'
 import SearchBar from '@/components/SearchBar'
 import BatchActions from '@/components/BatchActions'
+import BatchEditModal from '@/components/BatchEditModal'
+import ExportDropdown from '@/components/ExportDropdown'
+import CustomPagination from '@/components/CustomPagination'
+import { formatDateTime } from '@/utils'
 
 export default function RoleManage() {
   const [roles, setRoles] = useState<AdminRole[]>([])
@@ -19,13 +23,27 @@ export default function RoleManage() {
   const [selectedRole, setSelectedRole] = useState<number>(0)
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([])
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [searchVisible, setSearchVisible] = useState(false)
+  const [searchParams, setSearchParams] = useState<Record<string, string>>({})
+  const [batchEditVisible, setBatchEditVisible] = useState(false)
+  const [selectedRecords, setSelectedRecords] = useState<AdminRole[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [total, setTotal] = useState(0)
   const { hasPermission } = usePermission()
 
-  const fetchRoles = async () => {
+  const fetchRoles = async (params?: Record<string, string>, page: number = currentPage, size: number = pageSize) => {
     setLoading(true)
     try {
-      const data = await roleApi.getList()
-      setRoles(data)
+      const mergedParams = { ...searchParams, ...params }
+      const data = await roleApi.getList({ ...mergedParams, page: String(page), page_size: String(size) })
+      if (Array.isArray(data)) {
+        setRoles(data)
+        setTotal(data.length)
+      } else if (data.data) {
+        setRoles(data.data)
+        setTotal(data.total || 0)
+      }
     } catch (error) {
       message.error('获取角色列表失败')
     } finally {
@@ -36,7 +54,7 @@ export default function RoleManage() {
   const fetchPermissions = async () => {
     try {
       const data = await permissionApi.getList()
-      setPermissions(data)
+      setPermissions(Array.isArray(data) ? data : data.data)
     } catch (error) {
       message.error('获取权限列表失败')
     }
@@ -95,6 +113,24 @@ export default function RoleManage() {
     }
   }
 
+  const handleBatchEdit = () => {
+    const records = roles.filter(r => selectedRowKeys.includes(String(r.id)))
+    setSelectedRecords(records)
+    setBatchEditVisible(true)
+  }
+
+  const handleBatchEditSubmit = async (updatedRecords: Record<string, any>[]) => {
+    try {
+      await roleApi.batchUpdate(updatedRecords)
+      message.success('批量编辑成功')
+      fetchRoles()
+      setSelectedRowKeys([])
+      setBatchEditVisible(false)
+    } catch (error) {
+      message.error('批量编辑失败')
+    }
+  }
+
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
@@ -134,7 +170,9 @@ export default function RoleManage() {
     const params: Record<string, string> = {}
     if (values.name) params.name = values.name
     if (values.status) params.status = values.status
-    fetchRoles()
+    setSearchParams(params)
+    setCurrentPage(1)
+    fetchRoles(params, 1)
   }
 
   const groupedPermissions = permissions.reduce((acc, perm) => {
@@ -167,7 +205,7 @@ export default function RoleManage() {
     { title: '层级', dataIndex: 'level', key: 'level', render: (level: number) => `第${level}级` },
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '状态', dataIndex: 'status', key: 'status', render: (status: number) => status === 1 ? '启用' : '禁用' },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at' },
+    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: (t: string) => formatDateTime(t) },
     {
       title: '操作',
       key: 'action',
@@ -189,9 +227,8 @@ export default function RoleManage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>角色管理</h2>
-        <Space>
+      {searchVisible && (
+        <div style={{ marginBottom: 16, width: '100%' }}>
           <SearchBar
             fields={[
               { key: 'name', label: '角色名称', type: 'input', placeholder: '请输入角色名称' },
@@ -202,21 +239,41 @@ export default function RoleManage() {
             ]}
             onSearch={handleSearch}
           />
+        </div>
+      )}
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>角色管理</h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button type="link" icon={<SearchOutlined />} onClick={() => setSearchVisible(!searchVisible)} style={{ backgroundColor: '#1890ff', color: '#fff', borderColor: '#1890ff' }}>
+            {searchVisible ? '收起搜索' : '搜索'}
+          </Button>
+          <ExportDropdown data={roles} filename="角色列表" />
           <BatchActions
             selectedRowKeys={selectedRowKeys}
             onBatchDelete={handleBatchDelete}
+            onBatchEdit={handleBatchEdit}
           />
           {hasPermission('role_create') && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>添加角色</Button>
           )}
-        </Space>
+        </div>
       </div>
       <Table
         dataSource={roles}
         columns={columns}
         rowKey="id"
         loading={loading}
-        pagination={{ pageSize: 10 }}
+        pagination={false}
+      />
+      <CustomPagination
+        current={currentPage}
+        pageSize={pageSize}
+        total={total}
+        onChange={(page, size) => {
+          setCurrentPage(page)
+          setPageSize(size)
+          fetchRoles(undefined, page, size)
+        }}
       />
       <Modal
         title={isEdit ? '编辑角色' : '添加角色'}
@@ -274,6 +331,21 @@ export default function RoleManage() {
           ))}
         </div>
       </Modal>
+      <BatchEditModal
+        visible={batchEditVisible}
+        onCancel={() => setBatchEditVisible(false)}
+        onOk={handleBatchEditSubmit}
+        records={selectedRecords}
+        fields={[
+          { key: 'name', label: '角色名称', type: 'input', placeholder: '请输入角色名称' },
+          { key: 'description', label: '描述', type: 'textarea', placeholder: '请输入描述' },
+          { key: 'status', label: '状态', type: 'select', options: [
+            { label: '启用', value: 1 },
+            { label: '禁用', value: 0 }
+          ]}
+        ]}
+        title="批量编辑角色"
+      />
     </div>
   )
 }

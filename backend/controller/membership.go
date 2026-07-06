@@ -91,19 +91,33 @@ func Recharge(c *gin.Context) {
 // @Tags 会员
 // @Accept json
 // @Produce json
-// @Param level query int false "会员等级"
-// @Param status query int false "会员状态"
+// @Param user_id query string false "用户ID"
+// @Param level query string false "会员等级"
+// @Param membership_status query string false "会员状态"
 // @Security BearerAuth
 // @Success 200 {object} response.Response{data=[]model.Membership}
 // @Failure 400 {object} response.Response
 // @Failure 401 {object} response.Response
 // @Router /memberships [get]
 func GetMembershipList(c *gin.Context) {
+	userIDStr := c.Query("user_id")
 	level := c.Query("level")
-	status := c.Query("status")
+	status := c.Query("membership_status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
-	var levelInt, statusInt int
+	var userID int64
+	var levelInt int
+	var statusInt int = -1
 	var err error
+
+	if userIDStr != "" {
+		userID, err = strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			response.Fail(c, 400, "用户ID格式错误")
+			return
+		}
+	}
 
 	if level != "" {
 		levelInt, err = strconv.Atoi(level)
@@ -121,13 +135,32 @@ func GetMembershipList(c *gin.Context) {
 		}
 	}
 
-	memberships, err := logic.GetMembershipList(levelInt, statusInt)
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 0 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 0 {
+			pageSize = 10
+		}
+	}
+
+	memberships, total, err := logic.GetMembershipList(userID, levelInt, statusInt, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, memberships)
+	response.Success(c, gin.H{
+		"data":  memberships,
+		"total": total,
+	})
 }
 
 // @Summary 获取储值记录
@@ -300,4 +333,66 @@ func DeleteMembership(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "删除成功", nil)
+}
+
+// @Summary 批量删除会员
+// @Description 管理员批量删除会员
+// @Tags 会员
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "会员ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /memberships/batch [delete]
+func BatchDeleteMembership(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的会员")
+		return
+	}
+	if err := logic.BatchDeleteMembership(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新会员信息
+// @Description 管理员批量更新会员信息
+// @Tags 会员
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,level=int,balance=float64,points=int,membership_status=int} true "会员更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /memberships/batch [put]
+func BatchUpdateMembership(c *gin.Context) {
+	var reqs []struct {
+		ID               int64   `json:"id"`
+		Level            int     `json:"level"`
+		Balance          float64 `json:"balance"`
+		Points           int     `json:"points"`
+		MembershipStatus int     `json:"membership_status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateMembership(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

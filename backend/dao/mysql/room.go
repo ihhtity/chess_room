@@ -17,23 +17,43 @@ func GetRoomList(status, typeID int) ([]model.Room, error) {
 	return rooms, err
 }
 
-func GetRoomListFiltered(typeID int, floor string, status int, name string) ([]model.Room, error) {
+func GetRoomListFiltered(typeID int, floor string, status int, name string, page, pageSize int) ([]model.Room, int64, error) {
 	var rooms []model.Room
-	db := DB.Preload("Type").Order("sort_order ASC")
+	var total int64
+	db := DB.Model(&model.Room{}).Order("sort_order ASC")
 	if typeID != 0 {
 		db = db.Where("type_id = ?", typeID)
 	}
 	if floor != "" {
 		db = db.Where("floor = ?", floor)
 	}
-	if status != 0 {
+	if status >= 0 {
 		db = db.Where("status = ?", status)
 	}
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		db = DB.Preload("Type").Order("sort_order ASC")
+		if typeID != 0 {
+			db = db.Where("type_id = ?", typeID)
+		}
+		if floor != "" {
+			db = db.Where("floor = ?", floor)
+		}
+		if status >= 0 {
+			db = db.Where("status = ?", status)
+		}
+		if name != "" {
+			db = db.Where("name LIKE ?", "%"+name+"%")
+		}
+		db = db.Offset((page - 1) * pageSize).Limit(pageSize)
+	}
 	err := db.Find(&rooms).Error
-	return rooms, err
+	return rooms, total, err
 }
 
 func GetRoomListByTypeID(typeID int) ([]model.Room, error) {
@@ -70,4 +90,8 @@ func UpdateRoom(room *model.Room) error {
 
 func DeleteRoom(id int64) error {
 	return DB.Delete(&model.Room{}, id).Error
+}
+
+func BatchDeleteRoom(ids []int64) error {
+	return DB.Where("id IN (?)", ids).Delete(&model.Room{}).Error
 }

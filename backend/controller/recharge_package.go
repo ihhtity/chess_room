@@ -39,6 +39,8 @@ type RechargePackageUpdateRequest struct {
 func GetRechargePackageList(c *gin.Context) {
 	name := c.Query("name")
 	statusStr := c.Query("status")
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
 
 	status := -1
 	var err error
@@ -50,12 +52,31 @@ func GetRechargePackageList(c *gin.Context) {
 		}
 	}
 
-	packages, err := logic.GetRechargePackageListFiltered(name, status)
+	page := 1
+	pageSize := 10
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	packages, total, err := logic.GetRechargePackageListFiltered(name, status, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, packages)
+	response.Success(c, gin.H{
+		"data":  packages,
+		"total": total,
+	})
 }
 
 // @Summary 获取储值套餐详情
@@ -186,4 +207,63 @@ func DeleteRechargePackage(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除储值套餐
+// @Description 管理员批量删除储值套餐
+// @Tags 储值套餐
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "套餐ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /recharge-packages/batch [delete]
+func BatchDeleteRechargePackage(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的储值套餐")
+		return
+	}
+	if err := logic.BatchDeleteRechargePackage(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新储值套餐
+// @Description 管理员批量更新储值套餐状态
+// @Tags 储值套餐
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "储值套餐更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /recharge-packages/batch [put]
+func BatchUpdateRechargePackage(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateRechargePackage(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

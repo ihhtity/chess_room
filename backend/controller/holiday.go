@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,12 +26,36 @@ type HolidayCreateRequest struct {
 // @Router /holidays [get]
 func GetHolidayList(c *gin.Context) {
 	isHoliday := c.Query("is_holiday")
-	holidays, err := logic.GetHolidayList(isHoliday)
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	page := 1
+	pageSize := 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	holidays, total, err := logic.GetHolidayList(isHoliday, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, holidays)
+	response.Success(c, gin.H{
+		"data":  holidays,
+		"total": total,
+	})
 }
 
 // @Summary 获取节假日详情
@@ -132,4 +157,63 @@ func DeleteHoliday(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除节假日
+// @Description 管理员批量删除节假日
+// @Tags 节假日
+// @Accept json
+// @Produce json
+// @Param body body object{ids=[]string} true "节假日ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /holidays/batch [delete]
+func BatchDeleteHoliday(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if len(req.IDs) == 0 {
+		response.Fail(c, 400, "请选择要删除的节假日")
+		return
+	}
+	if err := logic.BatchDeleteHoliday(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新节假日
+// @Description 管理员批量更新节假日是否为假期
+// @Tags 节假日
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,is_holiday=int} true "节假日更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /holidays/batch [put]
+func BatchUpdateHoliday(c *gin.Context) {
+	var reqs []struct {
+		ID        int64 `json:"id"`
+		IsHoliday int   `json:"is_holiday"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateHoliday(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }

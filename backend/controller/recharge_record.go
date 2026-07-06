@@ -4,6 +4,7 @@ import (
 	"chess-room-backend/logic"
 	"chess-room-backend/model"
 	"chess-room-backend/pkg/response"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,12 +29,36 @@ type RechargeRecordCreateRequest struct {
 func GetRechargeRecordList(c *gin.Context) {
 	userID := c.Query("user_id")
 	status := c.Query("status")
-	records, err := logic.GetRechargeRecordList(userID, status)
+	pageStr := c.Query("page")
+	pageSizeStr := c.Query("page_size")
+
+	page := 1
+	pageSize := 10
+	var err error
+
+	if pageStr != "" {
+		page, err = strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+	}
+
+	if pageSizeStr != "" {
+		pageSize, err = strconv.Atoi(pageSizeStr)
+		if err != nil || pageSize < 1 {
+			pageSize = 10
+		}
+	}
+
+	records, total, err := logic.GetRechargeRecordList(userID, status, page, pageSize)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
-	response.Success(c, records)
+	response.Success(c, gin.H{
+		"data":  records,
+		"total": total,
+	})
 }
 
 // @Summary 获取充值记录详情
@@ -136,4 +161,58 @@ func DeleteRechargeRecord(c *gin.Context) {
 		return
 	}
 	response.Success(c, nil)
+}
+
+// @Summary 批量删除充值记录
+// @Description 批量删除充值记录
+// @Tags 充值记录管理
+// @Accept json
+// @Produce json
+// @Param body body struct{ IDs []string `json:"ids"` } true "充值记录ID列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Router /recharge-records/batch [delete]
+func BatchDeleteRechargeRecord(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+	if err := logic.BatchDeleteRechargeRecord(req.IDs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+	response.SuccessWithMsg(c, "批量删除成功", nil)
+}
+
+// @Summary 批量更新充值记录
+// @Description 管理员批量更新充值记录状态
+// @Tags 充值记录管理
+// @Accept json
+// @Produce json
+// @Param body body []object{id=int64,status=int} true "充值记录更新信息列表"
+// @Security BearerAuth
+// @Success 200 {object} response.Response
+// @Failure 400 {object} response.Response
+// @Failure 401 {object} response.Response
+// @Router /recharge-records/batch [put]
+func BatchUpdateRechargeRecord(c *gin.Context) {
+	var reqs []struct {
+		ID     int64 `json:"id"`
+		Status int   `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&reqs); err != nil {
+		response.Fail(c, 400, "参数错误")
+		return
+	}
+
+	if err := logic.BatchUpdateRechargeRecord(reqs); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessWithMsg(c, "批量更新成功", nil)
 }
