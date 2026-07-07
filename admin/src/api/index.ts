@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import { Admin, Room, RoomType, Order, Membership, User, Activity, Announcement, RechargePackage, Payment, Review, TimeSlot, Holiday, RechargeRecord, Notification, OperationLog, AdminRole, Permission } from '@/types'
+import { Admin, Room, RoomType, Order, Membership, User, Activity, Announcement, RechargePackage, Payment, Review, TimeSlot, Holiday, RechargeRecord, Notification, OperationLog, AdminRole, Permission, CronJob } from '@/types'
 
 // 定义类型转换函数
 const cast = <T>(res: any): T => res as unknown as T
@@ -715,5 +715,42 @@ export const permissionApi = {
   // 为角色分配权限
   assign: async (roleId: number, permissionIds: number[]) => {
     await request.post(`/admin/permissions/role/${roleId}`, { permission_ids: permissionIds })
+  }
+}
+
+// 定时任务接口
+export const cronJobApi = {
+  // 获取定时任务列表
+  getList: async (params?: { name?: string; status?: string; page?: string; page_size?: string }) => {
+    const res = await request.get('/admin/cron-jobs', { params })
+    return cast<CronJob[] | { data: CronJob[]; total: number }>(res)
+  },
+  // 获取定时任务详情
+  getDetail: async (id: number) => {
+    const res = await request.get(`/admin/cron-jobs/${id}`)
+    return cast<CronJob>(res)
+  },
+  // 创建定时任务
+  create: async (data: Partial<CronJob>) => {
+    const res = await request.post('/admin/cron-jobs', data)
+    return cast<CronJob>(res)
+  },
+  // 更新定时任务信息
+  update: async (id: number, data: Partial<CronJob>) => {
+    const res = await request.put(`/admin/cron-jobs/${id}`, data)
+    return cast<CronJob>(res)
+  },
+  // 批量更新定时任务信息
+  batchUpdate: async (items: any[]) => {
+    const res = await request.put('/admin/cron-jobs/batch', items)
+    return cast<{ success: boolean }>(res)
+  },
+  // 删除定时任务
+  delete: async (id: number) => {
+    await request.delete(`/admin/cron-jobs/${id}`)
+  },
+  // 批量删除定时任务
+  batchDelete: async (ids: number[]) => {
+    await request.delete('/admin/cron-jobs/batch', { data: { ids } })
   }
 }

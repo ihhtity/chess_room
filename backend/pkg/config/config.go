@@ -16,12 +16,19 @@ type Config struct {
 	JWT      JWTConfig      // JWT配置
 	Wechat   WechatConfig   // 微信配置
 	Log      LogConfig      // 日志配置
+	CORS     CORSConfig     // CORS配置
 }
 
 // 定义服务器配置结构体
 type ServerConfig struct {
-	Port string // 服务器端口
-	Mode string // 运行模式
+	Port   string // 服务器端口
+	Mode   string // 运行模式
+	Domain string // 服务域名
+}
+
+// 定义CORS配置结构体
+type CORSConfig struct {
+	AllowedOrigins []string // 允许的源列表
 }
 
 // 定义数据库配置结构体

@@ -415,6 +415,18 @@ func SetupRouter() *gin.Engine {
 		operationLogs.PUT("/batch", middleware.AdminMiddleware(), controller.BatchUpdateOperationLog)
 	}
 
+	// 创建定时任务路由组（管理员端）
+	cronJobs := api.Group("/admin/cron-jobs", middleware.AdminMiddleware(), middleware.OperationLogMiddleware())
+	{
+		cronJobs.GET("/", controller.GetCronJobList)
+		cronJobs.GET("/:id", controller.GetCronJobDetail)
+		cronJobs.POST("/", controller.CreateCronJob)
+		cronJobs.PUT("/:id", controller.UpdateCronJob)
+		cronJobs.PUT("/batch", controller.BatchUpdateCronJob)
+		cronJobs.DELETE("/:id", controller.DeleteCronJob)
+		cronJobs.DELETE("/batch", controller.BatchDeleteCronJob)
+	}
+
 	// 创建导出路由组
 	export := api.Group("/export", middleware.AdminMiddleware())
 	{

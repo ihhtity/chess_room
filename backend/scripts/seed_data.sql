@@ -325,3 +325,15 @@ INSERT IGNORE INTO operation_logs (admin_id, action, module, target_id, content,
 (3, 'update', 'membership', 1, '提升会员等级：张三 VIP', '192.168.1.102', NOW()),
 (3, 'view', 'order', 0, '查看订单列表', '192.168.1.102', NOW()),
 (4, 'logout', 'admin', 1, '管理员退出系统', '192.168.1.103', NOW());
+
+INSERT IGNORE INTO cron_jobs (name, cron_expression, handler, params, status, last_run_at, next_run_at, run_count, description, created_at, updated_at) VALUES
+('订单超时自动取消', '0 */5 * * *', 'order.cancel_timeout', '{\"timeout_minutes\": 30}', 1, DATE_SUB(NOW(), INTERVAL 5 MINUTE), DATE_ADD(NOW(), INTERVAL 5 MINUTE), 120, '每5分钟检查并取消未支付超时订单', NOW(), NOW()),
+('会员到期提醒', '0 9 * * *', 'membership.expire_reminder', '{\"days_before\": 7}', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY), 30, '每天9点提醒即将到期的会员', NOW(), NOW()),
+('每日营收统计', '0 0 * * *', 'statistics.daily_report', '{\"type\": \"revenue\"}', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY), 7, '每天凌晨统计前一天营收数据', NOW(), NOW()),
+('过期活动状态更新', '0 1 * * *', 'activity.expire_update', '{}', 1, DATE_SUB(NOW(), INTERVAL 1 HOUR), DATE_ADD(NOW(), INTERVAL 23 HOUR), 5, '每天凌晨1点更新已过期活动状态', NOW(), NOW()),
+('操作日志清理', '0 2 * * 0', 'log.clean_operation', '{\"keep_days\": 30}', 1, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY), 4, '每周日凌晨2点清理30天前的操作日志', NOW(), NOW()),
+('房间状态重置', '0 6 * * *', 'room.status_reset', '{}', 1, DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY), 30, '每天6点重置房间状态为可用', NOW(), NOW()),
+('会员积分过期清理', '0 3 1 * *', 'membership.expire_points', '{\"expire_days\": 365}', 0, DATE_SUB(NOW(), INTERVAL 1 MONTH), DATE_ADD(NOW(), INTERVAL 1 MONTH), 11, '每月1号凌晨3点清理过期积分', NOW(), NOW()),
+('数据备份', '0 4 * * *', 'system.data_backup', '{\"backup_path\": \"/backup/\"}', 0, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY), 15, '每天凌晨4点执行数据库备份', NOW(), NOW()),
+('优惠活动推送', '0 10 * * 6', 'notification.promotion_push', '{\"template_id\": \"promo001\"}', 1, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_ADD(NOW(), INTERVAL 7 DAY), 4, '每周六上午10点推送优惠活动', NOW(), NOW()),
+('系统健康检查', '*/10 * * * *', 'system.health_check', '{\"check_items\": [\"db\", \"redis\", \"memory\"]}', 1, DATE_SUB(NOW(), INTERVAL 10 MINUTE), DATE_ADD(NOW(), INTERVAL 10 MINUTE), 144, '每10分钟执行系统健康检查', NOW(), NOW());

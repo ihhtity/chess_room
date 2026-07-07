@@ -233,6 +233,21 @@ export interface OperationLog {
   created_at: string
 }
 
+export interface CronJob {
+  id: number
+  name: string
+  cron_expression: string
+  handler: string
+  params: string
+  status: number
+  last_run_at: string
+  next_run_at: string
+  run_count: number
+  description: string
+  created_at: string
+  updated_at: string
+}
+
 export interface ApiResponse<T = any> {
   code: number
   message: string

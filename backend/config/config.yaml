@@ -4,6 +4,18 @@ server:
   port: 8080
   # 运行模式
   mode: debug
+  # 服务域名
+  domain: api.ihhtity.icu
+
+# CORS配置
+cors:
+  # 允许的源列表
+  allowed_origins:
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:8080
+    - https://chess-user.ihhtity.icu
+    - https://chess-admin.ihhtity.icu
 
 # 数据库配置
 database:
@@ -57,7 +69,7 @@ wechat:
   # API密钥
   api_key: 
   # 支付回调地址
-  pay_notify_url: http://localhost:8080/api/payments/notify
+  pay_notify_url: https://api.ihhtity.icu/api/payments/notify
 
 # 日志配置
 log:

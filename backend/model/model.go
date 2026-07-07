@@ -400,6 +400,33 @@ func (RechargePackage) TableName() string {
 	return "recharge_packages"
 }
 
+// 定时任务状态
+const (
+	CronJobStatusEnabled  = 1
+	CronJobStatusDisabled = 0
+)
+
+// 定时任务表
+type CronJob struct {
+	ID             int64      `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	Name           string     `gorm:"column:name;size:100;not null" json:"name" comment:"任务名称"`
+	CronExpression string     `gorm:"column:cron_expression;size:50;not null" json:"cron_expression" comment:"Cron表达式"`
+	Handler        string     `gorm:"column:handler;size:100;not null" json:"handler" comment:"处理函数标识"`
+	Params         string     `gorm:"column:params;size:500" json:"params" comment:"参数(JSON)"`
+	Status         int        `gorm:"column:status;default:1" json:"status" comment:"状态"`
+	LastRunAt      *time.Time `gorm:"column:last_run_at" json:"last_run_at" comment:"最后运行时间"`
+	NextRunAt      *time.Time `gorm:"column:next_run_at" json:"next_run_at" comment:"下次运行时间"`
+	RunCount       int        `gorm:"column:run_count;default:0" json:"run_count" comment:"运行次数"`
+	Description    string     `gorm:"column:description;size:500" json:"description" comment:"描述"`
+	CreatedAt      time.Time  `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+	UpdatedAt      time.Time  `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
+}
+
+// 定时任务表
+func (CronJob) TableName() string {
+	return "cron_jobs"
+}
+
 // 评价表
 type Review struct {
 	ID        int64      `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
@@ -443,5 +470,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&Announcement{},    // 公告表
 		&RechargePackage{}, // 充值套餐表
 		&Review{},          // 评价表
+		&CronJob{},         // 定时任务表
 	).Error
 }

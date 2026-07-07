@@ -45,6 +45,7 @@ const menuItems = [
   { key: '/recharge-record', icon: <FileTextOutlined />, label: '充值记录', permission: 'member_view' },
   { key: '/notification', icon: <NotificationOutlined />, label: '通知管理', permission: 'announcement_view' },
   { key: '/operation-log', icon: <AuditOutlined />, label: '操作日志', permission: 'admin_view' },
+  { key: '/cron-job', icon: <ClockCircleOutlined />, label: '定时任务', permission: 'admin_view' },
   { key: '/role', icon: <TeamOutlined />, label: '角色管理', permission: 'role_view' },
   { key: '/permission', icon: <LockOutlined />, label: '权限管理', permission: 'permission_view' },
   { key: '/admin-manage', icon: <UserOutlined />, label: '管理者管理', permission: 'admin_view' },

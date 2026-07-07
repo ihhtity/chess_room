@@ -60,6 +60,8 @@ const (
 
 	RoleNotFound ErrCode = 8001
 
+	CronJobNotFound ErrCode = 8101
+
 	WechatError ErrCode = 6001
 )
 
@@ -103,6 +105,7 @@ var errMessages = map[ErrCode]string{
 	ReviewAlreadyDone:       "该订单已评价",
 	TimeSlotNotFound:        "时间槽不存在",
 	RoleNotFound:            "角色不存在",
+	CronJobNotFound:         "定时任务不存在",
 	WechatError:             "微信接口错误",
 }
 

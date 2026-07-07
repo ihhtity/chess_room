@@ -3,7 +3,7 @@ import { message } from 'antd'
 import { ApiResponse } from '@/types'
 
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: (import.meta as any).env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'

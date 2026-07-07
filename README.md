@@ -589,7 +589,100 @@ SERVER_PORT=8080
 
 ---
 
-## 十、注意事项
+## 十、域名配置
+
+### 10.1 域名规划
+
+| 项目 | 域名 | 用途 |
+|------|------|------|
+| 后端 API | api.ihhtity.icu | RESTful API 服务 |
+| 用户端 | ihhtity.icu | Web端用户界面 |
+| 管理端 | admin.ihhtity.icu | PC端管理后台 |
+
+### 10.2 环境变量配置
+
+**admin/.env.development**
+```
+VITE_API_BASE_URL=/api
+```
+
+**admin/.env.production**
+```
+VITE_API_BASE_URL=https://api.ihhtity.icu/api
+```
+
+**frontend/.env.development**
+```
+VITE_API_BASE_URL=/api
+```
+
+**frontend/.env.production**
+```
+VITE_API_BASE_URL=https://api.ihhtity.icu/api
+```
+
+### 10.3 CORS 配置
+
+后端 `config/config.yaml` 中配置允许的源：
+```yaml
+cors:
+  allowed_origins:
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:8080
+    - https://ihhtity.icu
+    - https://admin.ihhtity.icu
+```
+
+---
+
+## 十一、项目更新日志
+
+### 11.1 定时任务模块
+
+**新增文件：**
+- `backend/model/model.go` - 添加 CronJob 模型和状态常量
+- `backend/dao/mysql/cron_job.go` - 定时任务数据库访问层
+- `backend/logic/cron_job.go` - 定时任务业务逻辑层
+- `backend/controller/cron_job.go` - 定时任务 API 控制器
+- `admin/src/pages/CronJobManage.tsx` - 定时任务管理页面
+
+**功能特性：**
+- 定时任务 CRUD 操作
+- 按名称、状态筛选
+- 分页查询
+- 批量编辑和删除
+- Cron 表达式输入
+- 运行次数、最后运行时间、下次运行时间展示
+
+### 11.2 API 文档自动更新
+
+**修改文件：**
+- `backend/.air.toml` - 配置热重载时自动执行 `swag init`
+- `backend/main.go` - 启动时打印 API 文档访问地址
+
+**功能特性：**
+- 每次热重载自动更新 Swagger API 文档
+- 启动时打印文档地址（http://localhost:8080/swagger/index.html）
+
+### 11.3 域名配置优化
+
+**新增文件：**
+- `admin/.env.development` - 管理端开发环境配置
+- `admin/.env.production` - 管理端生产环境配置
+- `frontend/.env.development` - 用户端开发环境配置
+- `frontend/.env.production` - 用户端生产环境配置
+
+**修改文件：**
+- `backend/config/config.yaml` - 添加服务器域名和 CORS 配置
+- `backend/pkg/config/config.go` - 添加 CORS 配置结构体
+- `backend/middleware/cors.go` - 重构为读取配置文件的允许源列表
+- `admin/src/utils/request.ts` - 使用环境变量配置 API 地址
+- `frontend/src/utils/request.ts` - 使用环境变量配置 API 地址
+
+---
+
+## 十二、注意事项
 
 1. 所有敏感配置通过环境变量注入
 2. 数据库操作使用参数化查询防止 SQL 注入
@@ -599,3 +692,4 @@ SERVER_PORT=8080
 6. 密码使用 bcrypt 加密存储
 7. API 响应使用统一格式
 8. 跨域请求需配置 CORS 中间件，允许前端和管理端访问
+9. 部署时需配置 HTTPS，微信支付回调地址必须为 HTTPS

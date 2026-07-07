@@ -136,6 +136,8 @@ func main() {
 	go func() {
 		// 记录服务启动日志
 		log.Logger.Info("服务正在启动，端口：" + viper.GetString("server.port"))
+		// 记录 Swagger 文档地址
+		log.Logger.Info(fmt.Sprintf("API文档地址: http://localhost:%s/swagger/index.html", viper.GetString("server.port")))
 		// 启动服务并监听端口
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			// 服务启动失败则记录致命错误

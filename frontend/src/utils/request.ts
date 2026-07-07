@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
 import { showToast } from '@/components/Toast'
 
-const baseURL = '/api'
+const baseURL = (import.meta as any).env.VITE_API_BASE_URL || '/api'
 
 const instance = axios.create({
   baseURL,

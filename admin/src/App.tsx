@@ -18,6 +18,7 @@ import PaymentManage from '@/pages/PaymentManage'
 import RechargeRecordManage from '@/pages/RechargeRecordManage'
 import NotificationManage from '@/pages/NotificationManage'
 import OperationLogManage from '@/pages/OperationLogManage'
+import CronJobManage from '@/pages/CronJobManage'
 import Profile from '@/pages/Profile'
 import RoleManage from '@/pages/RoleManage'
 import PermissionManage from '@/pages/PermissionManage'
@@ -79,6 +80,7 @@ function App() {
           <Route path="recharge-record" element={<RechargeRecordManage />} />
           <Route path="notification" element={<NotificationManage />} />
           <Route path="operation-log" element={<OperationLogManage />} />
+          <Route path="cron-job" element={<CronJobManage />} />
           <Route path="role" element={<RoleManage />} />
           <Route path="permission" element={<PermissionManage />} />
           <Route path="admin-manage" element={<AdminManage />} />
