@@ -11,10 +11,7 @@
 | 后端 | Go + Gin | RESTful API 服务 |
 | 数据库 | MySQL | 主业务数据存储 |
 | 缓存 | Redis | 会话管理、热点数据缓存 |
-| 用户端 | React + TypeScript + Vite | Web端用户界面框架 |
-| 用户端 | NutUI React | 移动端 UI 组件库 |
-| 用户端 | axios | HTTP 请求库 |
-| 用户端 | react-router-dom | 路由管理 |
+| 用户端 | vue3 + uniapp + pinia + @climblee/uv-ui + vue-i18n | 移动端用户界面框架 |
 | 用户端 | Sass | CSS 预处理器 |
 | 管理端 | React + TypeScript + Vite | PC端管理后台框架 |
 | 管理端 | Ant Design | 企业级 UI 组件库 |
@@ -27,10 +24,10 @@
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 启动开发服务器 |
-| `npm run build` | 构建生产版本 |
-| `npm run preview` | 预览生产构建 |
-| `npm run lint` | 执行 ESLint 代码检查 |
+| `npm run dev:h5` | 启动 H5 开发服务器 |
+| `npm run build:h5` | 构建 H5 生产版本 |
+| `npm run dev:mp-weixin` | 启动微信小程序开发 |
+| `npm run build:mp-weixin` | 构建微信小程序生产版本 |
 
 **管理端 (admin)**
 
@@ -445,21 +442,30 @@ chess-room/
 │   │   └── wechat/           # 微信SDK封装
 │   ├── main.go               # 入口
 │   └── go.mod                # 依赖
-├── frontend/                 # React 用户端
+├── frontend/                 # UniApp 用户端
 │   ├── src/
 │   │   ├── api/              # API接口定义
-│   │   ├── components/       # 组件
+│   │   ├── stores/           # Pinia状态管理
+│   │   ├── types/            # TypeScript类型定义
+│   │   ├── locales/          # 国际化配置
 │   │   ├── pages/            # 页面
+│   │   │   ├── index/        # 首页
+│   │   │   ├── room/         # 包间相关
 │   │   │   ├── booking/      # 预约相关
 │   │   │   ├── order/        # 订单相关
 │   │   │   ├── member/       # 会员相关
-│   │   │   ├── room/         # 包间相关
-│   │   │   └── user/         # 用户相关
-│   │   ├── router/           # 路由配置
-│   │   ├── utils/            # 工具函数
-│   │   ├── app.tsx           # 应用根组件
-│   │   ├── main.tsx          # 入口
-│   │   └── app.scss          # 全局样式
+│   │   │   ├── user/         # 用户相关
+│   │   │   ├── activities/   # 活动相关
+│   │   │   ├── coupons/      # 优惠券
+│   │   │   ├── notifications/# 消息通知
+│   │   │   ├── announcements/# 公告通知
+│   │   │   ├── help/         # 帮助中心
+│   │   │   └── about/        # 关于我们
+│   │   ├── static/           # 静态资源
+│   │   ├── App.vue           # 应用根组件
+│   │   ├── main.ts           # 入口
+│   │   ├── pages.json        # 页面路由配置
+│   │   └── manifest.json     # 应用配置
 │   ├── vite.config.ts        # Vite配置
 │   ├── tsconfig.json         # TypeScript配置
 │   └── package.json          # 依赖配置
@@ -577,7 +583,7 @@ SERVER_PORT=8080
 
 ### 阶段三：前端开发 ✅
 
-1. 用户端 React + Vite + NutUI 开发
+1. 用户端 Vue3 + UniApp + Pinia + @climblee/uv-ui + vue-i18n 开发
 2. 管理端 React + Vite + Ant Design 开发
 
 ### 阶段四：集成测试

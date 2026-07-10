@@ -6,6 +6,7 @@ import (
 	"chess-room-backend/pkg/response"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -522,6 +523,75 @@ func BatchUpdateRoomType(c *gin.Context) {
 	}
 
 	response.SuccessWithMsg(c, "批量更新成功", nil)
+}
+
+// @Summary 检查房间可用性
+// @Description 检查房间在指定时间段是否可用
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param room_id query int true "房间ID"
+// @Param start_time query string true "开始时间(YYYY-MM-DD HH:mm:ss)"
+// @Param end_time query string true "结束时间(YYYY-MM-DD HH:mm:ss)"
+// @Success 200 {object} response.Response{data=object{available=bool,message=string}}
+// @Failure 400 {object} response.Response
+// @Router /rooms/availability [get]
+func CheckRoomAvailability(c *gin.Context) {
+	roomIDStr := c.Query("room_id")
+	startTimeStr := c.Query("start_time")
+	endTimeStr := c.Query("end_time")
+
+	if roomIDStr == "" || startTimeStr == "" || endTimeStr == "" {
+		response.Fail(c, 400, "参数不能为空")
+		return
+	}
+
+	roomID, err := strconv.ParseInt(roomIDStr, 10, 64)
+	if err != nil {
+		response.Fail(c, 400, "房间ID格式错误")
+		return
+	}
+
+	startTime, err := time.Parse("2006-01-02 15:04:05", startTimeStr)
+	if err != nil {
+		response.Fail(c, 400, "开始时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+		return
+	}
+
+	endTime, err := time.Parse("2006-01-02 15:04:05", endTimeStr)
+	if err != nil {
+		response.Fail(c, 400, "结束时间格式错误，应为 YYYY-MM-DD HH:mm:ss")
+		return
+	}
+
+	available, message := logic.CheckRoomAvailability(roomID, startTime, endTime)
+	response.Success(c, gin.H{
+		"available": available,
+		"message":   message,
+	})
+}
+
+// @Summary 获取日期类型
+// @Description 获取指定日期是工作日、周末还是节假日
+// @Tags 房间
+// @Accept json
+// @Produce json
+// @Param date query string true "日期(YYYY-MM-DD)"
+// @Success 200 {object} response.Response{data=object{date_type=string,date_type_text=string}}
+// @Failure 400 {object} response.Response
+// @Router /rooms/date-type [get]
+func GetDateType(c *gin.Context) {
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		response.Fail(c, 400, "日期不能为空")
+		return
+	}
+
+	dateType, dateTypeText := logic.GetDateType(dateStr)
+	response.Success(c, gin.H{
+		"date_type":      dateType,
+		"date_type_text": dateTypeText,
+	})
 }
 
 // @Summary 健康检查

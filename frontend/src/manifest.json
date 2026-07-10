@@ -1,0 +1,24 @@
+{
+  "name": "棋牌室",
+  "appid": "__UNI__CHESS_ROOM",
+  "description": "棋牌室多端预订系统",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "h5": {
+    "title": "棋牌室",
+    "router": {
+      "mode": "hash"
+    },
+    "devServer": {
+      "port": 5173
+    }
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  }
+}

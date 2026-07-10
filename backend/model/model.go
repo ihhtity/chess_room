@@ -85,7 +85,7 @@ type Admin struct {
 	Realname  string    `gorm:"column:realname;size:100" json:"realname" comment:"真实姓名"`
 	Phone     string    `gorm:"column:phone;size:20;unique_index" json:"phone" comment:"手机号"`
 	Email     *string   `gorm:"column:email;size:50;unique_index" json:"email" comment:"邮箱"`
-	RoleType  int       `gorm:"column:role;default:1" json:"role" comment:"管理员类型"`
+	RoleType  int       `gorm:"column:role;default:1" json:"role_type" comment:"管理员类型"`
 	RoleID    int64     `gorm:"column:role_id;default:1" json:"role_id" comment:"角色ID"`
 	Role      AdminRole `gorm:"foreignkey:RoleID;association_autoupdate:false;association_autocreate:false" json:"role" comment:"角色信息"`
 	Status    int       `gorm:"column:status;default:1" json:"status" comment:"状态"`
@@ -258,8 +258,12 @@ type Membership struct {
 	UserID           int64      `gorm:"column:user_id;unique_index" json:"user_id" comment:"用户ID"`
 	User             User       `gorm:"foreignkey:UserID" json:"user" comment:"用户"`
 	Level            int        `gorm:"column:level;default:0" json:"level" comment:"等级"`
+	LevelName        string     `gorm:"column:level_name;size:50" json:"level_name" comment:"等级名称"`
+	MemberNo         string     `gorm:"column:member_no;size:50;unique_index" json:"member_no" comment:"会员号"`
 	Points           int        `gorm:"column:points;default:0" json:"points" comment:"积分"`
 	Balance          float64    `gorm:"column:balance;type:decimal(10,2);default:0" json:"balance" comment:"余额"`
+	Discount         string     `gorm:"column:discount;size:10" json:"discount" comment:"折扣"`
+	RemainingHours   int        `gorm:"column:remaining_hours;default:0" json:"remaining_hours" comment:"剩余时长(小时)"`
 	TotalConsumed    float64    `gorm:"column:total_consumed;type:decimal(10,2);default:0" json:"total_consumed" comment:"总消费金额"`
 	TotalRecharged   float64    `gorm:"column:total_recharged;type:decimal(10,2);default:0" json:"total_recharged" comment:"总充值金额"`
 	MembershipStatus int        `gorm:"column:membership_status;default:1" json:"membership_status" comment:"会员状态"`
@@ -448,6 +452,78 @@ func (Review) TableName() string {
 	return "reviews"
 }
 
+// 优惠券表
+type Coupon struct {
+	ID        int64      `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	Name      string     `gorm:"column:name;size:100;not null" json:"name" comment:"优惠券名称"`
+	Amount    float64    `gorm:"column:amount;type:decimal(10,2);not null" json:"amount" comment:"优惠金额"`
+	MinAmount float64    `gorm:"column:min_amount;type:decimal(10,2);default:0" json:"min_amount" comment:"最低消费金额"`
+	ValidFrom time.Time  `gorm:"column:valid_from" json:"valid_from" comment:"开始时间"`
+	ValidTo   time.Time  `gorm:"column:valid_to" json:"valid_to" comment:"结束时间"`
+	Status    int        `gorm:"column:status;default:0" json:"status" comment:"状态"`
+	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
+	DeletedAt *time.Time `gorm:"column:deleted_at" json:"-" comment:"删除时间"`
+}
+
+func (Coupon) TableName() string {
+	return "coupons"
+}
+
+// 用户优惠券关联表
+type UserCoupon struct {
+	ID        int64      `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	UserID    int64      `gorm:"column:user_id;index" json:"user_id" comment:"用户ID"`
+	CouponID  int64      `gorm:"column:coupon_id;index" json:"coupon_id" comment:"优惠券ID"`
+	Coupon    Coupon     `gorm:"foreignkey:CouponID" json:"coupon" comment:"优惠券"`
+	Status    int        `gorm:"column:status;default:0" json:"status" comment:"状态"`
+	UsedAt    *time.Time `gorm:"column:used_at" json:"used_at" comment:"使用时间"`
+	OrderID   int64      `gorm:"column:order_id;index" json:"order_id" comment:"订单ID"`
+	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+}
+
+func (UserCoupon) TableName() string {
+	return "user_coupons"
+}
+
+// 用户设置表
+type UserSetting struct {
+	ID             int64     `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	UserID         int64     `gorm:"column:user_id;unique_index" json:"user_id" comment:"用户ID"`
+	Notifications  int       `gorm:"column:notifications;default:1" json:"notifications" comment:"消息通知开关"`
+	Sound          int       `gorm:"column:sound;default:1" json:"sound" comment:"声音提醒开关"`
+	Vibrate        int       `gorm:"column:vibrate;default:1" json:"vibrate" comment:"震动提醒开关"`
+	Language       string    `gorm:"column:language;size:10;default:'zh-CN'" json:"language" comment:"语言设置"`
+	Theme          string    `gorm:"column:theme;size:20;default:'light'" json:"theme" comment:"主题设置"`
+	AllowPush      int       `gorm:"column:allow_push;default:1" json:"allow_push" comment:"允许推送开关"`
+	AllowMarketing int       `gorm:"column:allow_marketing;default:1" json:"allow_marketing" comment:"允许营销信息开关"`
+	CreatedAt      time.Time `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+	UpdatedAt      time.Time `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
+}
+
+func (UserSetting) TableName() string {
+	return "user_settings"
+}
+
+// 用户反馈表
+type Feedback struct {
+	ID        int64      `gorm:"primary_key;auto_increment" json:"id" comment:"主键"`
+	UserID    int64      `gorm:"column:user_id;index" json:"user_id" comment:"用户ID"`
+	User      User       `gorm:"foreignkey:UserID" json:"user" comment:"用户"`
+	Content   string     `gorm:"column:content;size:2000" json:"content" comment:"反馈内容"`
+	Contact   string     `gorm:"column:contact;size:100" json:"contact" comment:"联系方式"`
+	Type      int        `gorm:"column:type;default:0" json:"type" comment:"反馈类型"`
+	Status    int        `gorm:"column:status;default:0" json:"status" comment:"处理状态"`
+	Reply     string     `gorm:"column:reply;size:2000" json:"reply" comment:"回复内容"`
+	RepliedAt *time.Time `gorm:"column:replied_at" json:"replied_at" comment:"回复时间"`
+	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at" comment:"创建时间"`
+	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at" comment:"更新时间"`
+}
+
+func (Feedback) TableName() string {
+	return "feedbacks"
+}
+
 // 自动迁移数据库表
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
@@ -471,5 +547,9 @@ func AutoMigrate(db *gorm.DB) error {
 		&RechargePackage{}, // 充值套餐表
 		&Review{},          // 评价表
 		&CronJob{},         // 定时任务表
+		&Coupon{},          // 优惠券表
+		&UserCoupon{},      // 用户优惠券关联表
+		&UserSetting{},     // 用户设置表
+		&Feedback{},        // 用户反馈表
 	).Error
 }

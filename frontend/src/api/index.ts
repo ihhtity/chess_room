@@ -1,196 +1,142 @@
-import request from '@/utils/request'
-
-export interface User {
-  id: number
-  openid: string
-  phone: string
-  nickname: string
-  realname?: string
-  avatar: string
-  gender: number
-}
-
-export interface RoomType {
-  id: number
-  name: string
-  description: string
-  base_price: number
-  max_people: number
-}
-
-export interface Room {
-  id: number
-  name: string
-  type_id: number
-  type: RoomType
-  status: number
-  equipment: string
-  images: string
-  description: string
-  floor: string
-}
-
-export interface Order {
-  id: number
-  order_no: string
-  user_id: number
-  room_id: number
-  room: Room
-  start_time: string
-  end_time: string
-  duration: number
-  status: number
-  total_amount: number
-  paid_amount: number
-  created_at: string
-  remark?: string
-}
-
-export interface Membership {
-  id: number
-  user_id: number
-  user?: User
-  level: number
-  points: number
-  balance: number
-  total_consumed: number
-  total_recharged: number
-  discount?: number
-}
-
-export interface Activity {
-  id: number
-  name: string
-  description: string
-  image: string
-  discount: number
-  valid_from: string
-  valid_to: string
-  status: number
-}
-
-export interface Announcement {
-  id: number
-  title: string
-  content: string
-  type: number
-  created_at: string
-}
-
-export interface RechargePackage {
-  id: number
-  name: string
-  amount: number
-  gift_amount: number
-  gift_points: number
-  description: string
-  sort_order: number
-}
-
-export interface Review {
-  id: number
-  order_id: number
-  user_id: number
-  user?: User
-  room_id: number
-  rating: number
-  content: string
-  images: string
-  created_at: string
-}
-
-export interface LoginResult {
-  token: string
-  user: User
-}
+import { get, post, put, del } from './request'
+import type { User, Room, RoomType, Order, Membership, RechargeRecord, Activity, Announcement, TimeSlot, RechargePackage, Coupon, Notification, UserSetting, Feedback } from '@/types'
 
 export const userApi = {
-  login: (data: { code?: string; openid?: string; phone?: string; password?: string; nickname?: string; avatar?: string; gender?: number }) =>
-    request.post<LoginResult>('/user/login', data),
+  login: (data: { phone?: string; password?: string; open_id?: string; nickname?: string; avatar?: string; gender?: number }) =>
+    post<{ user: User; token: string }>('/user/login', data),
   
-  getUserInfo: () =>
-    request.get<User>('/user/info'),
+  register: (data: { phone: string; password: string; nickname?: string }) =>
+    post<{ user: User; token: string }>('/user/register', data),
   
-  updateUserInfo: (data: { nickname?: string; avatar?: string; gender?: number; realname?: string }) =>
-    request.put<User>('/user/info', data),
+  sendSms: (phone: string) =>
+    post('/user/send-sms', { phone }),
+  
+  getInfo: () =>
+    get<User>('/user/info'),
+  
+  updateInfo: (data: { nickname?: string; avatar?: string; gender?: number; realname?: string }) =>
+    put<User>('/user/info', data),
   
   changePassword: (data: { old_password: string; new_password: string }) =>
-    request.post<any>('/user/change-password', data)
+    post('/user/change-password', data)
 }
 
 export const roomApi = {
-  getRoomList: (params?: { status?: number; type_id?: number }) =>
-    request.get<Room[]>('/rooms', { params }),
+  getList: (params?: { type_id?: number; floor?: string; status?: number; name?: string; page?: number; page_size?: number }) =>
+    get<{ data: Room[]; total: number }>('/rooms', params),
   
-  getRoomDetail: (id: number) =>
-    request.get<Room>(`/rooms/${id}`),
+  getDetail: (id: number) =>
+    get<Room>(`/rooms/${id}`),
   
-  getRoomTypeList: () =>
-    request.get<RoomType[]>('/room-type')
+  getTypes: () =>
+    get<{ data: RoomType[]; total: number }>('/room-type'),
+  
+  checkAvailability: (params: { room_id: number; start_time: string; end_time: string }) =>
+    get<{ available: boolean; message: string }>('/rooms/availability', params),
+  
+  getDateType: (date: string) =>
+    get<{ date_type: string; date_type_text: string }>('/rooms/date-type', { date })
 }
 
 export const orderApi = {
-  createOrder: (data: { room_id: number; start_time: string; end_time: string; remark?: string }) =>
-    request.post<Order>('/orders', data),
+  getList: (params?: { status?: number; page?: number; page_size?: number }) =>
+    get<{ data: Order[]; total: number }>('/orders', params),
   
-  getOrderList: (params?: { room_id?: number; status?: number; start_time?: string; end_time?: string }) =>
-    request.get<Order[]>('/orders', { params }),
+  getDetail: (id: number) =>
+    get<Order>(`/orders/${id}`),
   
-  getOrderDetail: (id: number) =>
-    request.get<Order>(`/orders/${id}`),
+  create: (data: { room_id: number; start_time: string; end_time: string; remark?: string }) =>
+    post<Order>('/orders', data),
   
-  cancelOrder: (id: number) =>
-    request.put<any>(`/orders/${id}/cancel`),
+  cancel: (id: number) =>
+    put(`/orders/${id}/cancel`),
   
-  confirmOrder: (id: number) =>
-    request.put<any>(`/orders/${id}/confirm`),
+  confirm: (id: number) =>
+    put<Order>(`/orders/${id}/confirm`),
   
-  completeOrder: (id: number) =>
-    request.put<any>(`/orders/${id}/complete`)
-}
-
-export const paymentApi = {
-  createPayment: (data: { order_no: string; payment_type: number }) =>
-    request.post<any>('/payments', data),
-  
-  getPaymentByOrderNo: (orderNo: string) =>
-    request.get<any>(`/payments/${orderNo}`)
+  complete: (id: number) =>
+    put<Order>(`/orders/${id}/complete`)
 }
 
 export const membershipApi = {
-  getMembership: () =>
-    request.get<Membership>('/membership'),
+  getInfo: () =>
+    get<Membership>('/membership'),
   
   recharge: (data: { amount: number }) =>
-    request.post<Membership>('/recharge', data),
+    post<Membership>('/membership/recharge', data),
   
   getRechargeRecords: () =>
-    request.get<any[]>('/membership/recharges'),
+    get<RechargeRecord[]>('/membership/recharges')
+}
+
+export const notificationApi = {
+  getList: (params?: { page?: number; page_size?: number }) =>
+    get<{ data: Notification[]; total: number }>('/notifications', params),
   
-  getRechargePackages: () =>
-    request.get<RechargePackage[]>('/recharge-packages')
+  markAllRead: () =>
+    post('/notifications/mark-all-read')
 }
 
 export const activityApi = {
-  getActivityList: () =>
-    request.get<Activity[]>('/activities'),
+  getList: () =>
+    get<{ data: Activity[]; total: number }>('/activities'),
   
-  getActivityDetail: (id: number) =>
-    request.get<Activity>(`/activities/${id}`)
+  getDetail: (id: number) =>
+    get<Activity>(`/activities/${id}`)
 }
 
 export const announcementApi = {
-  getAnnouncementList: () =>
-    request.get<Announcement[]>('/announcements'),
+  getList: () =>
+    get<{ data: Announcement[]; total: number }>('/announcements'),
   
-  getAnnouncementDetail: (id: number) =>
-    request.get<Announcement>(`/announcements/${id}`)
+  getDetail: (id: number) =>
+    get<Announcement>(`/announcements/${id}`)
 }
 
-export const reviewApi = {
-  getReviewList: (params?: { room_id?: number; rating?: number }) =>
-    request.get<Review[]>('/reviews', { params }),
+export const timeSlotApi = {
+  getList: () =>
+    get<{ data: TimeSlot[]; total: number }>('/time-slots')
+}
+
+export const wechatApi = {
+  login: (data: { code: string; nickname?: string; avatar?: string; gender?: number }) =>
+    post<{ user: User; token: string }>('/wechat/login', data),
   
-  createReview: (data: { order_id: number; rating: number; content: string; images?: string }) =>
-    request.post<Review>('/reviews', data)
+  pay: (data: { order_id: number; amount: number; open_id: string }) =>
+    post('/wechat/pay', data)
+}
+
+export const rechargePackageApi = {
+  getList: () =>
+    get<{ data: RechargePackage[]; total: number }>('/recharge-packages')
+}
+
+export const couponApi = {
+  getList: () =>
+    get<{ data: Coupon[]; total: number }>('/coupons'),
+  
+  claim: (id: number) =>
+    post(`/coupons/${id}/claim`)
+}
+
+export const settingApi = {
+  get: () =>
+    get<UserSetting>('/setting'),
+  
+  update: (data: Partial<UserSetting>) =>
+    put<UserSetting>('/setting', data),
+  
+  toggle: (key: string) =>
+    post<UserSetting>('/setting/toggle', { key })
+}
+
+export const feedbackApi = {
+  create: (data: { content: string; contact?: string; type?: number }) =>
+    post<Feedback>('/feedback', data),
+  
+  getList: (params?: { page?: number; page_size?: number }) =>
+    get<{ data: Feedback[]; total: number }>('/feedback', params),
+  
+  getDetail: (id: number) =>
+    get<Feedback>(`/feedback/${id}`)
 }

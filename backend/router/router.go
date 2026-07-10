@@ -52,6 +52,30 @@ func SetupRouter() *gin.Engine {
 		user.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteUser)
 	}
 
+	// 创建用户设置路由组
+	setting := api.Group("/setting")
+	{
+		// 获取用户设置（需要认证）
+		setting.GET("/", middleware.AuthMiddleware(), controller.GetUserSetting)
+		// 更新用户设置（需要认证）
+		setting.PUT("/", middleware.AuthMiddleware(), controller.UpdateUserSetting)
+		// 切换设置开关（需要认证）
+		setting.POST("/toggle", middleware.AuthMiddleware(), controller.ToggleUserSetting)
+	}
+
+	// 创建反馈路由组
+	feedback := api.Group("/feedback")
+	{
+		// 提交反馈（需要认证）
+		feedback.POST("/", middleware.AuthMiddleware(), controller.CreateFeedback)
+		// 获取用户反馈列表（需要认证）
+		feedback.GET("/", middleware.AuthMiddleware(), controller.GetFeedbackList)
+		// 获取反馈详情（需要认证）
+		feedback.GET("/:id", middleware.AuthMiddleware(), controller.GetFeedback)
+		// 回复反馈（需要管理员权限）
+		feedback.PUT("/:id/reply", middleware.AdminMiddleware(), controller.ReplyFeedback)
+	}
+
 	// 创建房间列表路由组（公开）
 	rooms := api.Group("/rooms")
 	{
@@ -59,6 +83,10 @@ func SetupRouter() *gin.Engine {
 		rooms.GET("/", controller.GetRoomList)
 		// 获取房间详情
 		rooms.GET("/:id", controller.GetRoomDetail)
+		// 检查房间可用性
+		rooms.GET("/availability", controller.CheckRoomAvailability)
+		// 获取日期类型
+		rooms.GET("/date-type", controller.GetDateType)
 	}
 
 	// 创建房间管理路由组（需要管理员权限）
@@ -375,6 +403,17 @@ func SetupRouter() *gin.Engine {
 		rechargeRecords.DELETE("/:id", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.DeleteRechargeRecord)
 		// 批量删除充值记录（需要管理员权限）
 		rechargeRecords.DELETE("/batch", middleware.AdminMiddleware(), middleware.OperationLogMiddleware(), controller.BatchDeleteRechargeRecord)
+	}
+
+	// 创建优惠券路由组
+	coupons := api.Group("/coupons")
+	{
+		// 获取优惠券列表（需要认证）
+		coupons.GET("/", middleware.AuthMiddleware(), controller.GetCouponList)
+		// 获取优惠券详情（需要认证）
+		coupons.GET("/:id", middleware.AuthMiddleware(), controller.GetCouponDetail)
+		// 使用优惠券（需要认证）
+		coupons.POST("/:id/use", middleware.AuthMiddleware(), controller.UseCoupon)
 	}
 
 	// 创建通知路由组

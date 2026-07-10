@@ -37,9 +37,3 @@ Thumbs.db
 # Go
 *.test
 *.prof
-backend/chess-room
-backend/tmp/
-
-# Docker
-docker-compose.override.yml
-.dockerignore

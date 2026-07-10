@@ -39,7 +39,7 @@ func CreateOrder(userID, roomID int64, startTime, endTime time.Time, remark stri
 		return nil, errno.New(errno.InternalError)
 	}
 
-	if room.Status != 1 {
+	if room.Status != model.RoomStatusAvailable {
 		return nil, errno.New(errno.RoomDisabled)
 	}
 
@@ -53,7 +53,11 @@ func CreateOrder(userID, roomID int64, startTime, endTime time.Time, remark stri
 	}
 
 	duration := utils.CalculateDurationMinutes(startTime, endTime)
-	price := room.Type.BasePrice * float64(duration) / 60
+	
+	price, err := CalculateRoomPrice(room.TypeID, startTime, endTime)
+	if err != nil {
+		price = room.Type.BasePrice * float64(duration) / 60
+	}
 
 	order := &model.Order{
 		OrderNo:     utils.GenerateOrderNo(),

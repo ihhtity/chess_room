@@ -46,3 +46,9 @@ func DeleteHoliday(id int64) error {
 func BatchDeleteHoliday(ids []int64) error {
 	return DB.Where("id IN (?)", ids).Delete(&model.Holiday{}).Error
 }
+
+func GetHolidayByDate(date string) (*model.Holiday, error) {
+	var holiday model.Holiday
+	err := DB.Where("date = ?", date).First(&holiday).Error
+	return &holiday, err
+}

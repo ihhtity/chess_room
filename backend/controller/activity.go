@@ -91,7 +91,10 @@ func GetActivityList(c *gin.Context) {
 			response.HandleError(c, err)
 			return
 		}
-		response.Success(c, activities)
+		response.Success(c, gin.H{
+			"data":  activities,
+			"total": len(activities),
+		})
 	}
 }
 

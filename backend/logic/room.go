@@ -7,6 +7,7 @@ import (
 	"chess-room-backend/pkg/errno"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/jinzhu/gorm"
 )
@@ -280,4 +281,132 @@ func BatchUpdateRoomType(reqs []struct {
 
 	redis.Del("room:type:list")
 	return nil
+}
+
+func CheckRoomAvailability(roomID int64, startTime, endTime time.Time) (bool, string) {
+	room, err := mysql.GetRoomByID(roomID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return false, "房间不存在"
+		}
+		return false, "查询房间信息失败"
+	}
+
+	if room.Status != model.RoomStatusAvailable {
+		statusText := getRoomStatusText(room.Status)
+		return false, "房间" + statusText
+	}
+
+	orders, _, err := mysql.GetOrderList(0, int(roomID), 0, "", startTime, endTime, 0, 0)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, "查询订单信息失败"
+	}
+
+	if len(orders) > 0 {
+		return false, "该时间段已被预约"
+	}
+
+	return true, "房间可用"
+}
+
+func getRoomStatusText(status int) string {
+	switch status {
+	case model.RoomStatusAvailable:
+		return "可预约"
+	case model.RoomStatusInUse:
+		return "使用中"
+	case model.RoomStatusReserved:
+		return "已预约"
+	case model.RoomStatusMaintenance:
+		return "维护中"
+	default:
+		return "状态未知"
+	}
+}
+
+func GetDateType(dateStr string) (string, string) {
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return "weekday", "工作日"
+	}
+
+	holiday, err := mysql.GetHolidayByDate(dateStr)
+	if err == nil && holiday.IsHoliday == 1 {
+		return "holiday", holiday.Name
+	}
+
+	dayOfWeek := date.Weekday()
+	if dayOfWeek == time.Saturday || dayOfWeek == time.Sunday {
+		return "weekend", "周末"
+	}
+
+	return "weekday", "工作日"
+}
+
+func CalculateRoomPrice(roomTypeID int64, startTime, endTime time.Time) (float64, error) {
+	roomType, err := mysql.GetRoomTypeByID(roomTypeID)
+	if err != nil {
+		return 0, errno.New(errno.RoomTypeNotFound)
+	}
+
+	dateStr := startTime.Format("2006-01-02")
+	dateType, _ := GetDateType(dateStr)
+
+	timeSlots, _, err := mysql.GetTimeSlotList(0, 0, 1, 100)
+	if err != nil {
+		return 0, errno.New(errno.InternalError)
+	}
+
+	startHour := float64(startTime.Hour()) + float64(startTime.Minute())/60
+	endHour := float64(endTime.Hour()) + float64(endTime.Minute())/60
+	duration := endHour - startHour
+	if duration < 0 {
+		duration += 24
+	}
+
+	var unitPrice float64
+	if len(timeSlots) > 0 {
+		for _, slot := range timeSlots {
+			slotStart, _ := time.Parse("15:04", slot.StartTime)
+			slotEnd, _ := time.Parse("15:04", slot.EndTime)
+			slotStartHour := float64(slotStart.Hour()) + float64(slotStart.Minute())/60
+			slotEndHour := float64(slotEnd.Hour()) + float64(slotEnd.Minute())/60
+
+			if startHour >= slotStartHour && endHour <= slotEndHour {
+				switch dateType {
+				case "weekend":
+					if slot.WeekendPrice > 0 {
+						unitPrice = slot.WeekendPrice
+					} else if slot.Price > 0 {
+						unitPrice = slot.Price
+					} else {
+						unitPrice = slot.WeekdayPrice
+					}
+				case "holiday":
+					if slot.HolidayPrice > 0 {
+						unitPrice = slot.HolidayPrice
+					} else if slot.Price > 0 {
+						unitPrice = slot.Price
+					} else {
+						unitPrice = slot.WeekdayPrice
+					}
+				default:
+					if slot.WeekdayPrice > 0 {
+						unitPrice = slot.WeekdayPrice
+					} else if slot.Price > 0 {
+						unitPrice = slot.Price
+					} else {
+						unitPrice = roomType.BasePrice
+					}
+				}
+				break
+			}
+		}
+	}
+
+	if unitPrice <= 0 {
+		unitPrice = roomType.BasePrice
+	}
+
+	return unitPrice * duration, nil
 }
